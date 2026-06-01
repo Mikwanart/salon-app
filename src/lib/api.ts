@@ -1,5 +1,5 @@
 // Base URL for the Express API
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const fetchSalons = async (searchQuery: string = '') => {
   const url = searchQuery ? `${API_URL}/salons?search=${encodeURIComponent(searchQuery)}` : `${API_URL}/salons`;
