@@ -35,7 +35,7 @@ export default function SearchBar({ variant = 'hero', onQueryChange, initialQuer
 
     return (
         <form className={`search-bar ${variant}`} onSubmit={handleSearch}>
-            <div className="search-field">
+            <div className="search-field service-field">
                 <span className="search-icon">
                     <Search size={20} />
                 </span>
@@ -46,8 +46,8 @@ export default function SearchBar({ variant = 'hero', onQueryChange, initialQuer
                     onChange={(e) => handleQueryChange(e.target.value)}
                 />
             </div>
-            <div className="search-divider" />
-            <div className="search-field">
+            <div className="search-divider location-divider" />
+            <div className="search-field location-field">
                 <span className="search-icon">
                     <MapPin size={20} />
                 </span>
@@ -58,8 +58,8 @@ export default function SearchBar({ variant = 'hero', onQueryChange, initialQuer
                     onChange={(e) => setLocation(e.target.value)}
                 />
             </div>
-            <div className="search-divider" />
-            <div className="search-field">
+            <div className="search-divider date-divider" />
+            <div className="search-field date-field">
                 <span className="search-icon">
                     <Calendar size={20} />
                 </span>

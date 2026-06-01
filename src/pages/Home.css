@@ -117,7 +117,13 @@ section.hero {
     }
 
     .hero {
-        min-height: 420px;
+        min-height: auto;
+    }
+
+    .hero-content {
+        padding: 60px 16px;
+        width: 100%;
+        gap: 16px;
     }
 
     .services-grid {
