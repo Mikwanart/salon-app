@@ -1,0 +1,122 @@
+<mxfile host="65bd71144e">
+  <diagram id="diag_full_flow" name="Salon App Full Flow">
+    <mxGraphModel dx="1295" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- ACTORS -->
+        <mxCell id="node_customer" value="&lt;b&gt;Customer&lt;/b&gt;&lt;br&gt;(Person @ Laptop)" style="shape=mxgraph.signs.tech.laptop;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="80" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="node_owner" value="&lt;b&gt;Salon Owner&lt;/b&gt;&lt;br&gt;(Person @ Laptop)" style="shape=mxgraph.signs.tech.laptop;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="440" width="80" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- FRONTEND -->
+        <mxCell id="node_webapp" value="&lt;b&gt;Web App (React)&lt;/b&gt;" style="shape=mxgraph.ios7.icons.laptop;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="220" y="140" width="80" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="node_dashboard" value="&lt;b&gt;Salon Dashboard&lt;/b&gt;" style="shape=mxgraph.ios7.icons.monitor;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="220" y="380" width="80" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- BACKEND CENTRAL -->
+        <mxCell id="node_backend" value="&lt;b&gt;Backend Server&lt;/b&gt;" style="shape=mxgraph.ios7.icons.gear;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="400" y="260" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- INFRASTRUCTURE -->
+        <mxCell id="node_db" value="&lt;b&gt;Database&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="640" y="260" width="90" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- SERVICES -->
+        <mxCell id="node_payment" value="&lt;b&gt;Payment Gateway&lt;/b&gt;&lt;br&gt;(MoMo / Card)" style="shape=mxgraph.finance.credit_card;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="400" y="60" width="80" height="50" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="node_notify" value="&lt;b&gt;Notification Svc&lt;/b&gt;" style="shape=mxgraph.ios7.icons.bell;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="400" y="480" width="60" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- ARROWS -->
+        
+        <!-- Customer -> Web App -->
+        <mxCell id="arrow_1" value="Browses salon" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="node_customer" target="node_webapp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Web App -> Backend -->
+        <mxCell id="arrow_2" value="Sends booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="node_webapp" target="node_backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Backend -> Payment -->
+        <mxCell id="arrow_3" value="Process charge" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="node_backend" target="node_payment">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Payment -> Backend -->
+        <mxCell id="arrow_4" value="Confirm status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="node_payment" target="node_backend">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="85" />
+              <mxPoint x="520" y="240" />
+              <mxPoint x="460" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Backend -> Database (Save) -->
+        <mxCell id="arrow_5" value="Save booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="node_backend" target="node_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Database -> Backend (Fetch) -->
+        <mxCell id="arrow_6" value="Check availability" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="node_db" target="node_backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Backend -> Notification -->
+        <mxCell id="arrow_7" value="Trigger alert" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="node_backend" target="node_notify">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Notification -> Customer -->
+        <mxCell id="arrow_8" value="Email receipt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;dashed=1;" edge="1" parent="1" source="node_notify" target="node_customer">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="780" y="510" />
+              <mxPoint x="780" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Notification -> Salon Owner -->
+        <mxCell id="arrow_9" value="New booking alert" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;dashed=1;" edge="1" parent="1" source="node_notify" target="node_owner">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="580" />
+              <mxPoint x="180" y="580" />
+              <mxPoint x="180" y="470" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Backend -> Dashboard -->
+        <mxCell id="arrow_10" value="Sync data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.75;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="node_backend" target="node_dashboard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Owner -> Dashboard -->
+        <mxCell id="arrow_11" value="View reports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="node_owner" target="node_dashboard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

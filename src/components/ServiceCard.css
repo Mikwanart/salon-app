@@ -1,0 +1,54 @@
+.service-card {
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    background: var(--bg);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition);
+    display: block;
+    cursor: pointer;
+}
+
+.service-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+}
+
+.service-card-image {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+}
+
+.service-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.service-card:hover .service-card-image img {
+    transform: scale(1.08);
+}
+
+.service-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+}
+
+.service-card-body {
+    padding: 16px;
+}
+
+.service-card-body h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+.service-price {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}

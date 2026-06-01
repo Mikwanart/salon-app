@@ -1,0 +1,143 @@
+section.hero {
+    position: relative;
+    min-height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1600') center/cover no-repeat;
+    text-align: center;
+    overflow: hidden;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+            rgba(26, 26, 46, 0.75) 0%,
+            rgba(26, 26, 46, 0.85) 100%);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 80px 24px 60px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero-tagline {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.hero h1 {
+    color: #fff;
+    font-size: 3.2rem;
+    max-width: 600px;
+    font-weight: 800;
+}
+
+.hero h1 em {
+    font-style: italic;
+    color: var(--primary);
+}
+
+.hero-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    max-width: 520px;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+/* Categories Section */
+.categories-section {
+    padding: 40px 0 0;
+}
+
+/* Trending Section */
+.trending-section {
+    padding-top: 48px;
+}
+
+.section-header-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.view-all-link {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary);
+    transition: opacity var(--transition);
+}
+
+.view-all-link:hover {
+    opacity: 0.7;
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+/* Featured Salons */
+.featured-section {
+    background: var(--surface);
+}
+
+.salons-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .salons-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .hero {
+        min-height: 420px;
+    }
+
+    .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .salons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .services-grid {
+        grid-template-columns: 1fr;
+    }
+}

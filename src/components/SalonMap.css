@@ -1,0 +1,103 @@
+.salon-map-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+/* ── Fallback state ─────────────────────────────── */
+.map-fallback {
+    width: 100%;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--color-surface, #1a1a2e) 0%, #16213e 100%);
+    border: 1px dashed var(--color-border, rgba(255,255,255,0.12));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.map-fallback::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(var(--color-primary-rgb, 139, 92, 246), 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.map-fallback-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.map-pin-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(var(--color-primary-rgb, 139, 92, 246), 0.15);
+    border: 1px solid rgba(var(--color-primary-rgb, 139, 92, 246), 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary, #8b5cf6);
+    margin-bottom: 6px;
+}
+
+.map-fallback-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #fff);
+    margin: 0;
+}
+
+.map-fallback-address {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary, rgba(255,255,255,0.6));
+    margin: 0;
+    max-width: 200px;
+}
+
+.map-fallback-note {
+    font-size: 0.72rem;
+    color: var(--color-text-secondary, rgba(255,255,255,0.4));
+    margin-top: 6px;
+    line-height: 1.5;
+}
+
+.map-fallback-note code {
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: monospace;
+    font-size: 0.72rem;
+}
+
+/* ── Directions link ────────────────────────────── */
+.map-directions-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--color-primary, #8b5cf6);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(var(--color-primary-rgb, 139, 92, 246), 0.08);
+    border: 1px solid rgba(var(--color-primary-rgb, 139, 92, 246), 0.2);
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    width: fit-content;
+}
+
+.map-directions-link:hover {
+    background: rgba(var(--color-primary-rgb, 139, 92, 246), 0.18);
+    border-color: rgba(var(--color-primary-rgb, 139, 92, 246), 0.4);
+    transform: translateY(-1px);
+}

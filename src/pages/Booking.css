@@ -1,0 +1,603 @@
+.booking-page {
+    min-height: 70vh;
+}
+
+.booking-header {
+    background: var(--surface);
+    padding: 48px 0 32px;
+    text-align: center;
+}
+
+.booking-header h1 {
+    font-size: 2rem;
+    margin-bottom: 4px;
+}
+
+.booking-header p {
+    font-size: 1.05rem;
+}
+
+/* Steps Indicator */
+.steps-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-bottom: 48px;
+    position: relative;
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all var(--transition);
+}
+
+.step-item.active .step-number {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: var(--shadow-primary);
+}
+
+.step-item.completed .step-number {
+    background: #10B981;
+    color: #fff;
+}
+
+.step-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.step-item.active .step-label {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Booking Content */
+.booking-content {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.booking-step h3 {
+    font-size: 1.3rem;
+    margin-bottom: 24px;
+}
+
+/* Service Options */
+.booking-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.booking-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    background: var(--surface);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.booking-option:hover {
+    border-color: var(--primary);
+}
+
+.booking-option.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.booking-option h4 {
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.booking-option p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.option-price {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Stylists */
+.booking-stylists {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.stylist-option {
+    text-align: center;
+    padding: 24px 12px;
+    background: var(--surface);
+    border: 2px solid transparent;
+    border-radius: var(--card-radius);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.stylist-option:hover {
+    border-color: var(--primary);
+}
+
+.stylist-option.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.stylist-option .stylist-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+}
+
+.stylist-option h4 {
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.stylist-option p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.stylist-rating-small {
+    font-size: 0.85rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Date & Time */
+.date-time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+}
+
+.date-picker label,
+.time-picker label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.date-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background: var(--bg);
+    transition: border-color var(--transition);
+}
+
+.date-input:focus {
+    border-color: var(--primary);
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.time-slot {
+    padding: 10px 4px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.time-slot:hover:not(.disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.time-slot.selected {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.time-slot.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Already booked dot indicator */
+.time-slot {
+    position: relative;
+}
+
+.slot-booked-dot {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    display: block;
+}
+
+
+/* Confirm Form */
+.confirm-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background: var(--bg);
+    transition: border-color var(--transition);
+}
+
+.form-input:focus {
+    border-color: var(--primary);
+}
+
+.booking-summary {
+    background: var(--surface);
+    border-radius: var(--card-radius);
+    padding: 24px;
+    margin-top: 8px;
+}
+
+.booking-summary h4 {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.summary-row span:last-child {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.summary-row.total {
+    border-top: 2px solid var(--border);
+    margin-top: 8px;
+    padding-top: 12px;
+}
+
+.summary-row.total span:last-child {
+    font-size: 1.2rem;
+    color: var(--primary);
+}
+
+/* Navigation */
+.booking-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    gap: 16px;
+}
+
+.booking-nav .btn {
+    min-width: 140px;
+}
+
+.booking-nav .btn:only-child {
+    margin-left: auto;
+}
+
+/* Success */
+.booking-success {
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #10B981;
+    color: #fff;
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    animation: scaleIn 0.5s ease-out;
+}
+
+.success-details {
+    background: var(--surface);
+    border-radius: var(--card-radius);
+    padding: 24px;
+    margin: 24px 0;
+    text-align: left;
+}
+
+.success-details p {
+    padding: 6px 0;
+    font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .steps-indicator {
+        gap: 12px;
+    }
+
+    .step-label {
+        display: none;
+    }
+
+    .step-number {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .date-time-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .time-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ── Payment Step ──────────────────────────────────── */
+.payment-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.payment-total-amount {
+    font-size: 1.1rem;
+    color: var(--primary);
+}
+
+.payment-methods-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.payment-method-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition);
+    width: 100%;
+}
+
+.payment-method-card:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.payment-method-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.payment-method-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.payment-method-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.payment-method-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.payment-method-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.payment-radio {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    transition: all var(--transition);
+    position: relative;
+}
+
+.payment-radio.checked {
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+.payment-radio.checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+}
+
+/* ── Payment Details Form ───────────────────────────── */
+.payment-details-form {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+}
+
+.payment-method-header {
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+}
+
+.payment-details-form .form-group {
+    padding: 16px 20px 0;
+}
+
+.payment-details-form .form-group:last-of-type {
+    padding-bottom: 16px;
+}
+
+.card-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+    padding: 0 20px;
+}
+
+.card-row .form-group {
+    padding: 16px 0 0;
+}
+
+.payment-info-note {
+    margin: 12px 20px 16px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    background: var(--surface);
+    padding: 10px 14px;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.payment-mock-note {
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+}
+
+/* Cash info block */
+.cash-info {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cash-info p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* ── Success Map ─────────────────────────────────────── */
+.success-map {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto 24px;
+    text-align: left;
+}
+
+.success-map h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+/* Success screen wider to fit map */
+.booking-success {
+    max-width: 540px;
+}
+
+@media (max-width: 600px) {
+    .payment-method-card {
+        padding: 12px 14px;
+        gap: 12px;
+    }
+
+    .payment-method-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .card-row {
+        grid-template-columns: 1fr;
+        padding: 0 16px;
+    }
+}

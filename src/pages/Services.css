@@ -1,0 +1,237 @@
+.services-hero {
+    background: var(--surface);
+    padding: 60px 0 48px;
+    text-align: center;
+}
+
+.services-hero h1 {
+    font-size: 2.4rem;
+    margin-bottom: 8px;
+}
+
+.services-hero p {
+    font-size: 1.05rem;
+    margin-bottom: 28px;
+}
+
+.services-hero .search-bar {
+    margin: 0 auto;
+}
+
+.services-content {
+    padding-top: 0;
+}
+
+.services-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 40px;
+}
+
+.services-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    position: sticky;
+    top: calc(var(--nav-height) + 20px);
+    align-self: start;
+}
+
+.filter-group h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.price-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+}
+
+.price-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: var(--shadow-primary);
+}
+
+.price-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.price-current {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.rating-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rating-option,
+.distance-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.rating-option input,
+.distance-option input {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+}
+
+.rating-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.distance-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Results bar (count + sort) */
+.results-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.results-count {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Sort control */
+.sort-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.sort-select {
+    padding: 6px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color var(--transition);
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Open Now toggle */
+.toggle-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.toggle-switch {
+    width: 42px;
+    height: 24px;
+    border-radius: 12px;
+    background: var(--border);
+    position: relative;
+    transition: background 0.25s;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.toggle-switch.on {
+    background: var(--primary);
+}
+
+.toggle-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    transition: left 0.25s;
+}
+
+.toggle-switch.on .toggle-knob {
+    left: 21px;
+}
+
+
+.services-results .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+@media (max-width: 1024px) {
+    .services-results .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .services-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .services-sidebar {
+        position: static;
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 24px;
+        padding-bottom: 16px;
+    }
+
+    .filter-group {
+        min-width: 200px;
+    }
+
+    .services-results .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .services-results .services-grid {
+        grid-template-columns: 1fr;
+    }
+}

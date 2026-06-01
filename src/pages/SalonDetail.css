@@ -1,0 +1,428 @@
+.salon-detail-page {
+    padding-bottom: 80px;
+}
+
+/* Hero */
+.salon-hero {
+    position: relative;
+    height: 360px;
+    overflow: hidden;
+}
+
+.salon-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.salon-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top,
+            rgba(26, 26, 46, 0.8) 0%,
+            rgba(26, 26, 46, 0.2) 100%);
+}
+
+.salon-hero-content {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    z-index: 2;
+}
+
+.salon-hero-content h1 {
+    color: #fff;
+    font-size: 2.5rem;
+    margin: 12px 0 8px;
+}
+
+.salon-hero-location {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+}
+
+/* Layout */
+.salon-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 40px;
+    margin-top: 48px;
+}
+
+.salon-main {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+}
+
+.detail-section h3 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--surface);
+}
+
+/* Services List */
+.detail-services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.detail-service-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    transition: all var(--transition);
+}
+
+.detail-service-item:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.detail-service-item h4 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.detail-service-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.detail-service-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.detail-service-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.btn-sm {
+    padding: 8px 20px;
+    font-size: 0.85rem;
+}
+
+/* Stylists */
+.detail-stylists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stylist-card {
+    text-align: center;
+    padding: 24px 16px;
+    background: var(--surface);
+    border-radius: var(--card-radius);
+    transition: all var(--transition);
+}
+
+.stylist-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-4px);
+}
+
+.stylist-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.stylist-card h4 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.stylist-role {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.stylist-rating {
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+.stylist-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+}
+
+.stylist-tags .badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+}
+
+/* Reviews */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.review-card {
+    padding: 20px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.review-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.review-header h4 {
+    font-size: 0.95rem;
+}
+
+.review-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.review-rating {
+    margin-left: auto;
+    color: #f59e0b;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+}
+
+.review-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* Sidebar */
+.salon-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: sticky;
+    top: calc(var(--nav-height) + 20px);
+    align-self: start;
+}
+
+.sidebar-card {
+    padding: 24px;
+    background: var(--surface);
+    border-radius: var(--card-radius);
+}
+
+.sidebar-card h4 {
+    font-size: 1rem;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.sidebar-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.sidebar-info p {
+    font-size: 0.9rem;
+}
+
+.sidebar-book-btn {
+    width: 100%;
+}
+
+.sidebar-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    text-align: center;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+@media (max-width: 1024px) {
+    .salon-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .salon-sidebar {
+        position: static;
+        flex-direction: row;
+    }
+
+    .sidebar-card {
+        flex: 1;
+    }
+}
+
+@media (max-width: 640px) {
+    .salon-sidebar {
+        flex-direction: column;
+    }
+
+    .salon-hero {
+        height: 260px;
+    }
+
+    .salon-hero-content h1 {
+        font-size: 1.8rem;
+    }
+}
+
+/* ===========================
+   REVIEW FORM
+   =========================== */
+.write-review-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    border-radius: var(--radius-md);
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    margin-bottom: 20px;
+}
+
+.write-review-toggle:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.review-form-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 24px;
+    animation: fadeInDown 0.3s ease;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.review-form-card h4 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+}
+
+.star-picker {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #d1d5db;
+    transition: color var(--transition), transform 0.1s;
+    padding: 2px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.star-btn.filled {
+    color: #f59e0b;
+}
+
+.star-btn:hover {
+    transform: scale(1.2);
+}
+
+.review-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: var(--bg);
+    resize: vertical;
+    transition: border-color var(--transition);
+    margin-bottom: 16px;
+    box-sizing: border-box;
+}
+
+.review-textarea:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+.review-form-actions {
+    display: flex;
+    gap: 12px;
+}

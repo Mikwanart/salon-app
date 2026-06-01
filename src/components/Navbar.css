@@ -1,0 +1,238 @@
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    height: var(--nav-height);
+    display: flex;
+    align-items: center;
+    transition: background var(--transition);
+}
+
+[data-theme="dark"] .navbar {
+    background: rgba(15, 15, 26, 0.95);
+}
+
+.navbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.brand-icon {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+}
+
+.nav-link {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    position: relative;
+    padding: 4px 0;
+    transition: color var(--transition);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 1px;
+    transition: width var(--transition);
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--primary);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 100%;
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-login {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    transition: color var(--transition);
+}
+
+.nav-login:hover {
+    color: var(--primary);
+}
+
+.nav-book {
+    padding: 10px 24px;
+    font-size: 0.9rem;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-profile-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    background: var(--surface);
+    border-radius: var(--radius-full);
+    transition: background var(--transition);
+}
+
+.nav-profile-link:hover {
+    background: var(--primary-light);
+}
+
+.nav-avatar {
+    width: 32px;
+    height: 32px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    overflow: hidden;
+}
+
+.nav-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nav-user-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+/* Hamburger */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    width: 28px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+    z-index: 101;
+}
+
+.hamburger span {
+    display: block;
+    width: 100%;
+    height: 2.5px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all var(--transition);
+}
+
+.hamburger.open span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger.open span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.open span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .navbar-links {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        justify-content: center;
+        gap: 32px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--transition);
+        z-index: 99;
+    }
+
+    .navbar-links.open {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .navbar-links .nav-link {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .navbar-actions {
+        display: none;
+    }
+}
+
+/* Theme Toggle */
+.theme-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-light);
+}

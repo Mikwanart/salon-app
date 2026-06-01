@@ -1,0 +1,111 @@
+.salon-card {
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    background: var(--bg);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition);
+    border: 1px solid var(--border);
+}
+
+.salon-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: transparent;
+}
+
+.salon-card-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.salon-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.salon-card:hover .salon-card-image img {
+    transform: scale(1.06);
+}
+
+.salon-rating {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+}
+
+.salon-card-body {
+    padding: 20px;
+}
+
+.salon-card-body h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.salon-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+}
+
+.salon-stars {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.salon-location {
+    color: var(--text-muted);
+}
+
+.salon-reviews {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.salon-book-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+}
+
+/* Heart / Favourite button */
+.salon-fav-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition), transform 0.15s ease, background var(--transition);
+    cursor: pointer;
+    border: none;
+}
+
+.salon-fav-btn:hover {
+    color: #E91E8C;
+    transform: scale(1.12);
+}
+
+.salon-fav-btn.active {
+    color: #E91E8C;
+}
+
+.salon-fav-btn.active:hover {
+    transform: scale(0.95);
+}

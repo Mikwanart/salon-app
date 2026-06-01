@@ -1,0 +1,33 @@
+{
+  "name": "salon-appointment-server",
+  "version": "1.0.0",
+  "description": "Backend API for Salon Appointment App",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-oauth2-jwt-bearer": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.7.0",
+    "nodemon": "^3.1.14",
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}

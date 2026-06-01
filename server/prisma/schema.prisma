@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  auth0Id   String   @unique
+  email     String   @unique
+  name      String
+  role      Role     @default(CLIENT)
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  salons    Salon[]       @relation("SalonOwner")
+  bookings  Appointment[] @relation("ClientBookings")
+  reviews   Review[]
+}
+
+enum Role {
+  CLIENT
+  SALON_OWNER
+  ADMIN
+}
+
+model Salon {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  address     String
+  city        String
+  state       String
+  zip         String
+  phone       String?
+  email       String?
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Owner reference
+  ownerId     String
+  owner       User     @relation("SalonOwner", fields: [ownerId], references: [id])
+
+  // Relations
+  services    Service[]
+  appointments Appointment[]
+  reviews     Review[]
+  stylists    Stylist[]
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  category    String   @default("Haircare")
+  description String?
+  price       Float
+  duration    Int      // Duration in minutes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Salon reference
+  salonId     String
+  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  // Relations
+  appointments Appointment[]
+}
+
+model Appointment {
+  id          String   @id @default(uuid())
+  date        DateTime
+  status      AppointmentStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // References
+  clientId    String
+  client      User     @relation("ClientBookings", fields: [clientId], references: [id])
+  salonId     String
+  salon       Salon    @relation(fields: [salonId], references: [id])
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id])
+  stylistId   String?
+  stylist     Stylist? @relation(fields: [stylistId], references: [id])
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // References
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  salonId   String
+  salon     Salon    @relation(fields: [salonId], references: [id])
+}
+
+model Stylist {
+  id          String   @id @default(uuid())
+  name        String
+  role        String
+  image       String?
+  rating      Float    @default(5.0)
+  specialties String[]
+
+  // Salon reference
+  salonId     String
+  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  // Relations
+  appointments Appointment[]
+}
