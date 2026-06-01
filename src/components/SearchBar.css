@@ -81,7 +81,7 @@
     flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
     .search-bar {
         flex-direction: row;
         align-items: center;
@@ -89,14 +89,16 @@
         padding: 6px 6px 6px 16px;
         gap: 8px;
         box-shadow: var(--shadow-md);
-        width: 100%;
-        max-width: 100%;
+        height: 50px;
+        box-sizing: border-box;
     }
 
     .search-bar.hero {
         background: rgba(26, 26, 46, 0.95);
         border-radius: var(--radius-full);
         padding: 6px 6px 6px 16px;
+        height: 50px;
+        box-sizing: border-box;
     }
 
     .search-field.location-field,
@@ -113,7 +115,6 @@
     .search-field input {
         padding: 6px 0;
         font-size: 0.9rem;
-        width: 100%;
     }
 
     .search-btn {
@@ -121,6 +122,5 @@
         font-size: 0.875rem;
         width: auto;
         margin-top: 0;
-        border-radius: var(--radius-full);
     }
 }
