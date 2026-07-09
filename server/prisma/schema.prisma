@@ -96,6 +96,7 @@ enum AppointmentStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+  RESCHEDULED
 }
 
 model Review {

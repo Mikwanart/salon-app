@@ -2,6 +2,9 @@ import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useToast } from '../context/ToastContext';
+import { fetchMyAppointments, updateAppointment } from '../lib/api';
 import { timeSlots } from '../data';
 import './Profile.css';
 
@@ -22,34 +25,83 @@ export default function Profile() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const { addNotification } = useNotifications();
+    const { getAccessTokenSilently } = useAuth0();
+    const { showToast } = useToast();
+    
     const [bookings, setBookings] = useState<Booking[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Reschedule modal state
     const [rescheduleId, setRescheduleId] = useState<string | null>(null);
     const [newDate, setNewDate] = useState('');
     const [newTime, setNewTime] = useState('');
 
-    useEffect(() => {
-        const savedBookings = localStorage.getItem('salon_bookings');
-        if (savedBookings) {
-            const parsed: Booking[] = JSON.parse(savedBookings);
-            parsed.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-            setBookings(parsed);
+    const mapBackendStatusToFrontend = (status: string): 'confirmed' | 'cancelled' | 'rescheduled' => {
+        switch (status) {
+            case 'CANCELLED':
+                return 'cancelled';
+            case 'RESCHEDULED':
+                return 'rescheduled';
+            case 'CONFIRMED':
+            case 'PENDING':
+            default:
+                return 'confirmed';
         }
-    }, []);
-
-    const saveBookings = (updated: Booking[]) => {
-        setBookings(updated);
-        localStorage.setItem('salon_bookings', JSON.stringify(updated));
     };
 
-    const handleCancel = (id: string) => {
-        const booking = bookings.find(b => b.id === id);
-        const updated = bookings.map((b) =>
-            b.id === id ? { ...b, status: 'cancelled' as const } : b
-        );
-        saveBookings(updated);
-        if (booking) addNotification(`Booking at ${booking.salonName} has been cancelled.`, 'info');
+    const loadBookings = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getAccessTokenSilently();
+            const data = await fetchMyAppointments(token);
+            
+            const mappedBookings: Booking[] = data.map((b: any) => {
+                const dateObj = new Date(b.date);
+                const dateStr = dateObj.toISOString().split('T')[0];
+                const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                
+                const paymentMatch = b.notes?.match(/Payment:\s*(\w+)/);
+                const paymentMethod = paymentMatch ? paymentMatch[1] : 'cash';
+
+                return {
+                    id: b.id,
+                    salonId: b.salonId,
+                    salonName: b.salon?.name || 'Unknown Salon',
+                    serviceName: b.service?.name || 'Unknown Service',
+                    stylistName: b.stylist?.name || 'Any',
+                    date: dateStr,
+                    time: timeStr,
+                    price: b.service?.price || 0,
+                    status: mapBackendStatusToFrontend(b.status),
+                    paymentMethod,
+                };
+            });
+            
+            setBookings(mappedBookings);
+        } catch (err) {
+            console.error('Failed to load appointments:', err);
+            showToast('Failed to load appointments.', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadBookings();
+    }, [getAccessTokenSilently]);
+
+    const handleCancel = async (id: string) => {
+        try {
+            const token = await getAccessTokenSilently();
+            await updateAppointment(id, { status: 'CANCELLED' }, token);
+            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' as const } : b));
+            const booking = bookings.find(b => b.id === id);
+            if (booking) addNotification(`Booking at ${booking.salonName} has been cancelled.`, 'info');
+            showToast('Booking cancelled successfully.', 'success');
+        } catch (err) {
+            console.error('Failed to cancel booking:', err);
+            showToast('Failed to cancel booking. Please try again.', 'error');
+        }
     };
 
     const handleBookAgain = (booking: Booking) => {
@@ -65,17 +117,42 @@ export default function Profile() {
         setNewTime(b?.time || '');
     };
 
-    const handleReschedule = () => {
-        if (!newDate || !newTime) return;
-        const booking = bookings.find(b => b.id === rescheduleId);
-        const updated = bookings.map(b =>
-            b.id === rescheduleId ? { ...b, date: newDate, time: newTime, status: 'rescheduled' as const } : b
-        );
-        saveBookings(updated);
-        if (booking) addNotification(`Booking at ${booking.salonName} rescheduled to ${newDate} at ${newTime}.`, 'success');
-        setRescheduleId(null);
-        setNewDate('');
-        setNewTime('');
+    const handleReschedule = async () => {
+        if (!newDate || !newTime || !rescheduleId) return;
+        
+        try {
+            // Parse newTime string (e.g. "10:00 AM")
+            const timeParts = newTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            let hours = 9;
+            let minutes = 0;
+            if (timeParts) {
+                hours = parseInt(timeParts[1], 10);
+                minutes = parseInt(timeParts[2], 10);
+                const period = timeParts[3].toUpperCase();
+                if (period === 'PM' && hours !== 12) hours += 12;
+                if (period === 'AM' && hours === 12) hours = 0;
+            }
+            
+            const combinedDate = new Date(`${newDate}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`);
+            
+            const token = await getAccessTokenSilently();
+            await updateAppointment(rescheduleId, { date: combinedDate.toISOString(), status: 'RESCHEDULED' }, token);
+            
+            setBookings(prev => prev.map(b =>
+                b.id === rescheduleId ? { ...b, date: newDate, time: newTime, status: 'rescheduled' as const } : b
+            ));
+            
+            const booking = bookings.find(b => b.id === rescheduleId);
+            if (booking) addNotification(`Booking at ${booking.salonName} rescheduled to ${newDate} at ${newTime}.`, 'success');
+            showToast('Booking rescheduled successfully.', 'success');
+            
+            setRescheduleId(null);
+            setNewDate('');
+            setNewTime('');
+        } catch (err) {
+            console.error('Failed to reschedule booking:', err);
+            showToast('Failed to reschedule booking. Please try again.', 'error');
+        }
     };
 
     const paymentLabel: Record<string, string> = {
@@ -155,7 +232,11 @@ export default function Profile() {
                         <p>{bookings.length} booking{bookings.length !== 1 ? 's' : ''} found</p>
                     </div>
 
-                    {bookings.length === 0 ? (
+                    {isLoading ? (
+                        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                            Loading your appointments...
+                        </div>
+                    ) : bookings.length === 0 ? (
                         <div className="profile-empty">
                             <p>You haven't booked any appointments yet.</p>
                             <Link to="/services" className="btn btn-primary">Browse Services</Link>

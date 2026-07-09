@@ -58,7 +58,7 @@ export default function Dashboard() {
                 date: dateStr,
                 time: timeStr,
                 price: b.service?.price || 0,
-                status: b.status,
+                status: b.status?.toLowerCase(),
                 paymentMethod,
                 customerName: 'You'
             };
