@@ -3,9 +3,8 @@ import { prisma } from '../lib/prisma';
 
 export const getSalons = async (req: Request, res: Response) => {
   try {
-    const { search, category } = req.query;
-    
-    // Basic filtering logic
+    const { search } = req.query;
+
     const whereClause: any = {};
     if (search) {
       whereClause.OR = [
@@ -13,17 +12,23 @@ export const getSalons = async (req: Request, res: Response) => {
         { city: { contains: String(search), mode: 'insensitive' } },
       ];
     }
-    // If we wanted to filter by service category, we would add it here
 
-    const salons = await prisma.salon.findMany({
-      where: whereClause,
-      include: {
-        services: true,
-        reviews: true,
-      },
-    });
+    // Basic pagination support
+    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10)));
+    const skip = (page - 1) * limit;
 
-    res.json(salons);
+    const [salons, total] = await Promise.all([
+      prisma.salon.findMany({
+        where: whereClause,
+        include: { services: true, reviews: true },
+        skip,
+        take: limit,
+      }),
+      prisma.salon.count({ where: whereClause }),
+    ]);
+
+    res.json({ data: salons, total, page, limit });
   } catch (error) {
     console.error('Error fetching salons:', error);
     res.status(500).json({ error: 'Failed to fetch salons' });

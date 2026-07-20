@@ -127,6 +127,16 @@
     color: #991b1b;
 }
 
+.badge-rescheduled {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-completed {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
 .cancel-btn {
     font-size: 0.78rem;
     padding: 6px 14px;

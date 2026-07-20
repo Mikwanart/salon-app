@@ -7,7 +7,9 @@ export const fetchSalons = async (searchQuery: string = '') => {
   if (!response.ok) {
     throw new Error('Failed to fetch salons');
   }
-  return response.json();
+  const json = await response.json();
+  // Handle paginated envelope { data, total, page, limit }
+  return Array.isArray(json) ? json : (json.data ?? json);
 };
 
 export const fetchSalonById = async (id: string) => {
@@ -35,7 +37,20 @@ export const syncUserToBackend = async (user: { name: string, email: string }, t
   return response.json();
 };
 
-export const createAppointment = async (bookingData: { salonId: string; serviceId: string; stylistId?: string; date: string; notes?: string }, token: string) => {
+export const createAppointment = async (
+  bookingData: { 
+    salonId: string; 
+    serviceId: string; 
+    stylistId?: string; 
+    date: string; 
+    notes?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    paymentDetails?: string;
+    transactionId?: string;
+  }, 
+  token: string
+) => {
   const response = await fetch(`${API_URL}/appointments`, {
     method: 'POST',
     headers: {
@@ -45,7 +60,14 @@ export const createAppointment = async (bookingData: { salonId: string; serviceI
     body: JSON.stringify(bookingData),
   });
   if (!response.ok) {
-    throw new Error('Failed to create appointment');
+    let errMsg = 'Failed to create appointment';
+    try {
+      const errData = await response.json();
+      if (errData && errData.error) {
+        errMsg = errData.error;
+      }
+    } catch (_) {}
+    throw new Error(errMsg);
   }
   return response.json();
 };
@@ -59,7 +81,9 @@ export const fetchMyAppointments = async (token: string) => {
   if (!response.ok) {
     throw new Error('Failed to fetch appointments');
   }
-  return response.json();
+  const json = await response.json();
+  // Handle paginated envelope { data, total, page, limit }
+  return Array.isArray(json) ? json : (json.data ?? json);
 };
 
 export const submitReview = async (reviewData: { salonId: string; rating: number; comment: string }, token: string) => {
@@ -92,6 +116,35 @@ export const updateAppointment = async (
   });
   if (!response.ok) {
     throw new Error('Failed to update appointment');
+  }
+  return response.json();
+};
+
+export const verifyPaymentStatus = async (id: string, token: string) => {
+  const response = await fetch(`${API_URL}/appointments/${id}/verify-payment`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to verify payment status');
+  }
+  return response.json();
+};
+
+/**
+ * Fetches already-booked time slots for a salon on a given date.
+ * Public endpoint — no auth token required.
+ * @param salonId - The salon UUID
+ * @param date - ISO date string (YYYY-MM-DD)
+ * @returns Array of time strings like ["10:00 AM", "2:30 PM"]
+ */
+export const fetchBookedSlots = async (salonId: string, date: string): Promise<string[]> => {
+  const response = await fetch(
+    `${API_URL}/appointments/booked-slots?salonId=${encodeURIComponent(salonId)}&date=${encodeURIComponent(date)}`
+  );
+  if (!response.ok) {
+    throw new Error('Failed to fetch booked slots');
   }
   return response.json();
 };

@@ -8,87 +8,102 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  auth0Id   String   @unique
-  email     String   @unique
+  id        String        @id @default(uuid())
+  auth0Id   String        @unique
+  email     String        @unique
   name      String
-  role      Role     @default(CLIENT)
+  role      Role          @default(CLIENT)
   phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  salons    Salon[]       @relation("SalonOwner")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   bookings  Appointment[] @relation("ClientBookings")
   reviews   Review[]
+  salons    Salon[]       @relation("SalonOwner")
+}
+
+model Salon {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  address      String
+  city         String
+  state        String
+  zip          String
+  phone        String?
+  email        String?
+  image        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ownerId      String
+  appointments Appointment[]
+  reviews      Review[]
+  owner        User          @relation("SalonOwner", fields: [ownerId], references: [id])
+  services     Service[]
+  stylists     Stylist[]
+}
+
+model Service {
+  id           String        @id @default(uuid())
+  name         String
+  category     String        @default("Haircare")
+  description  String?
+  price        Float
+  duration     Int
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  salonId      String
+  appointments Appointment[]
+  salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id             String            @id @default(uuid())
+  date           DateTime
+  status         AppointmentStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  clientId       String
+  salonId        String
+  serviceId      String
+  stylistId      String?
+  paymentDetails String?
+  paymentMethod  PaymentMethod     @default(CASH)
+  paymentStatus  PaymentStatus     @default(PENDING)
+  transactionId  String?
+  client         User              @relation("ClientBookings", fields: [clientId], references: [id])
+  salon          Salon             @relation(fields: [salonId], references: [id])
+  service        Service           @relation(fields: [serviceId], references: [id])
+  stylist        Stylist?          @relation(fields: [stylistId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  userId    String
+  salonId   String
+  salon     Salon    @relation(fields: [salonId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Stylist {
+  id           String        @id @default(uuid())
+  name         String
+  role         String
+  image        String?
+  rating       Float         @default(5.0)
+  specialties  String[]
+  salonId      String
+  appointments Appointment[]
+  salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
   CLIENT
   SALON_OWNER
   ADMIN
-}
-
-model Salon {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  address     String
-  city        String
-  state       String
-  zip         String
-  phone       String?
-  email       String?
-  image       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Owner reference
-  ownerId     String
-  owner       User     @relation("SalonOwner", fields: [ownerId], references: [id])
-
-  // Relations
-  services    Service[]
-  appointments Appointment[]
-  reviews     Review[]
-  stylists    Stylist[]
-}
-
-model Service {
-  id          String   @id @default(uuid())
-  name        String
-  category    String   @default("Haircare")
-  description String?
-  price       Float
-  duration    Int      // Duration in minutes
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Salon reference
-  salonId     String
-  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
-
-  // Relations
-  appointments Appointment[]
-}
-
-model Appointment {
-  id          String   @id @default(uuid())
-  date        DateTime
-  status      AppointmentStatus @default(PENDING)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // References
-  clientId    String
-  client      User     @relation("ClientBookings", fields: [clientId], references: [id])
-  salonId     String
-  salon       Salon    @relation(fields: [salonId], references: [id])
-  serviceId   String
-  service     Service  @relation(fields: [serviceId], references: [id])
-  stylistId   String?
-  stylist     Stylist? @relation(fields: [stylistId], references: [id])
 }
 
 enum AppointmentStatus {
@@ -99,31 +114,15 @@ enum AppointmentStatus {
   RESCHEDULED
 }
 
-model Review {
-  id        String   @id @default(uuid())
-  rating    Int      // 1-5
-  comment   String?
-  createdAt DateTime @default(now())
-
-  // References
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  salonId   String
-  salon     Salon    @relation(fields: [salonId], references: [id])
+enum PaymentMethod {
+  MOMO
+  CARD
+  CASH
 }
 
-model Stylist {
-  id          String   @id @default(uuid())
-  name        String
-  role        String
-  image       String?
-  rating      Float    @default(5.0)
-  specialties String[]
-
-  // Salon reference
-  salonId     String
-  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
-
-  // Relations
-  appointments Appointment[]
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
 }

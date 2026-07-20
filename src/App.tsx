@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
 import Home from './pages/Home';
 import Services from './pages/Services';
 import SalonDetail from './pages/SalonDetail';
@@ -34,7 +35,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/for-salons" element={<ForSalons />} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<RoleProtectedRoute role="salon_owner"><Dashboard /></RoleProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />

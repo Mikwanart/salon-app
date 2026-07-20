@@ -600,4 +600,424 @@
         grid-template-columns: 1fr;
         padding: 0 16px;
     }
+}
+
+/* ── Interactive Payment Simulation Overlay ──────────────── */
+.payment-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 10, 12, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.payment-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 440px;
+    padding: 32px;
+    position: relative;
+    text-align: center;
+    animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleUp {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Phone Simulator Styling */
+.phone-mockup {
+    width: 290px;
+    height: 520px;
+    background: #000;
+    border: 8px solid #333;
+    border-radius: 36px;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 0 4px #444;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.phone-notch {
+    width: 130px;
+    height: 18px;
+    background: #000;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+.phone-screen {
+    flex: 1;
+    background: #f7f9fa;
+    padding: 24px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #333;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.phone-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0 4px;
+    color: #666;
+}
+
+.momo-brand {
+    background: #FFD700;
+    color: #1a1a1a;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin: 12px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.momo-prompt-box {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.momo-merchant {
+    font-size: 0.8rem;
+    color: #777;
+}
+
+.momo-amount {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 8px 0;
+}
+
+.momo-pin-display {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.pin-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    transition: all 0.15s ease;
+}
+
+.pin-dot.filled {
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    transform: scale(1.1);
+}
+
+/* Keypad */
+.phone-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 4px;
+}
+
+.keypad-btn {
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: #eaeff2;
+    color: #333;
+    font-size: 1.15rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s ease;
+}
+
+.keypad-btn:active {
+    background: #d4dde1;
+}
+
+.keypad-btn.action-btn {
+    font-size: 0.8rem;
+    background: transparent;
+    color: #ef4444;
+}
+
+.keypad-btn.action-btn.approve-btn {
+    color: #10b981;
+    font-weight: 700;
+}
+
+/* 3DS Bank OTP Simulator */
+.bank-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #4f46e5;
+    margin-bottom: 8px;
+}
+
+.bank-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.otp-input-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.otp-box {
+    width: 44px;
+    height: 52px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: var(--surface);
+    color: var(--text-primary);
+    transition: all var(--transition);
+}
+
+.otp-box:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+    outline: none;
+}
+
+/* Custom SMS toast slide-down */
+.sms-toast-container {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 380px;
+    z-index: 3000;
+    animation: smsSlideDown 5s ease forwards;
+}
+
+.sms-toast {
+    background: rgba(255, 255, 255, 0.95);
+    border-left: 5px solid #4f46e5;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.15);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    backdrop-filter: blur(10px);
+}
+
+.sms-icon {
+    font-size: 1.6rem;
+}
+
+.sms-content {
+    text-align: left;
+}
+
+.sms-sender {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4f46e5;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.sms-body {
+    font-size: 0.85rem;
+    color: #333;
+    line-height: 1.4;
+}
+
+.sms-body strong {
+    background: #eceffd;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #4f46e5;
+}
+
+@keyframes smsSlideDown {
+    0% { top: -100px; }
+    5% { top: 20px; }
+    90% { top: 20px; }
+    100% { top: -100px; }
+}
+
+/* Processing state visualizer */
+.payment-processing-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.spinner-ring {
+    width: 64px;
+    height: 64px;
+    border: 5px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s infinite linear;
+    margin-bottom: 24px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ── Invoice styling ────────────────────────── */
+.invoice-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    padding: 24px;
+    margin: 24px 0;
+    text-align: left;
+}
+
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+.invoice-logo {
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--primary);
+}
+
+.invoice-meta {
+    text-align: right;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.invoice-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+.invoice-row.invoice-total {
+    border-bottom: none;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding-top: 16px;
+}
+
+.badge-status {
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-status.paid {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge-status.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-status.refunded {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.badge-status.failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.invoice-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.btn-secondary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
+}
+
+/* Print styling */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .booking-success, .booking-success * {
+        visibility: visible;
+    }
+    .booking-success {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 100%;
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+    }
+    .success-icon, .btn, .success-map, .invoice-actions {
+        display: none !important;
+    }
 }

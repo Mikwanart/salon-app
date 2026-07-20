@@ -30,6 +30,15 @@ export const createReview = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    // Prevent duplicate reviews from the same user for the same salon
+    const existingReview = await prisma.review.findFirst({
+      where: { userId: user.id, salonId },
+    });
+    if (existingReview) {
+      res.status(409).json({ error: 'You have already submitted a review for this salon.' });
+      return;
+    }
+
     // Create the review in the database
     const review = await prisma.review.create({
       data: {

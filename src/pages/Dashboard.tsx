@@ -18,6 +18,7 @@ interface RawBooking {
     price: number;
     status?: string;
     paymentMethod?: string;
+    paymentStatus?: string;
     customerName?: string;
 }
 
@@ -46,10 +47,6 @@ export default function Dashboard() {
             const dateObj = new Date(b.date);
             const dateStr = dateObj.toISOString().split('T')[0];
             const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            
-            // Extract payment from notes if available (dummy logic)
-            const paymentMatch = b.notes?.match(/Payment:\s*(\w+)/);
-            const paymentMethod = paymentMatch ? paymentMatch[1] : 'Unknown';
 
             return {
                 id: b.id,
@@ -59,7 +56,8 @@ export default function Dashboard() {
                 time: timeStr,
                 price: b.service?.price || 0,
                 status: b.status?.toLowerCase(),
-                paymentMethod,
+                paymentMethod: b.paymentMethod ? b.paymentMethod.toLowerCase() : 'cash',
+                paymentStatus: b.paymentStatus || 'PENDING',
                 customerName: 'You'
             };
         });
@@ -211,7 +209,15 @@ export default function Dashboard() {
                                                 <td>{b.serviceName}</td>
                                                 <td>{b.date} {b.time}</td>
                                                 <td className="td-price">${b.price}</td>
-                                                <td className="td-payment">{b.paymentMethod || '—'}</td>
+                                                <td className="td-payment">
+                                                    <span style={{ textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                        {b.paymentMethod === 'momo' ? '📱 MoMo' : 
+                                                         b.paymentMethod === 'card' ? '💳 Card' : '💵 Cash'}
+                                                    </span>
+                                                    <span className={`badge-status ${b.paymentStatus?.toLowerCase()}`} style={{ marginLeft: '8px', fontSize: '0.7rem', padding: '2px 6px', display: 'inline-block' }}>
+                                                        {b.paymentStatus}
+                                                    </span>
+                                                </td>
                                                 <td>
                                                     <span className={`status-badge ${b.status === 'cancelled' ? 'cancelled' : b.status === 'rescheduled' ? 'rescheduled' : 'confirmed'}`}>
                                                         {b.status === 'cancelled' ? 'Cancelled' : b.status === 'rescheduled' ? 'Rescheduled' : 'Confirmed'}

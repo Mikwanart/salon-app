@@ -1,19 +1,29 @@
+import 'dotenv/config'; // Must be first — loads .env before any other module initialises
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 
 import salonRoutes from './routes/salonRoutes';
 import userRoutes from './routes/userRoutes';
 import appointmentRoutes from './routes/appointmentRoutes';
 import reviewRoutes from './routes/reviewRoutes';
 
-dotenv.config();
+
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+}));
+
 app.use(express.json());
+
+// Incoming request logger for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toLocaleTimeString()}] 📡 ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -25,6 +35,14 @@ app.use('/api/salons', salonRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reviews', reviewRoutes);
+
+process.on('beforeExit', (code) => {
+  console.log('DEBUG: process beforeExit event with code:', code);
+  console.log('Active handles in beforeExit:', (process as any)._getActiveHandles?.()?.map((h: any) => h.constructor.name) || []);
+});
+process.on('exit', (code) => {
+  console.log('DEBUG: process exit event with code:', code);
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

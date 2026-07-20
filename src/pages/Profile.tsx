@@ -18,7 +18,8 @@ interface Booking {
     time: string;
     price: number;
     paymentMethod?: string;
-    status?: 'confirmed' | 'cancelled' | 'rescheduled';
+    paymentStatus?: string;
+    status?: 'confirmed' | 'cancelled' | 'rescheduled' | 'completed';
 }
 
 export default function Profile() {
@@ -36,12 +37,14 @@ export default function Profile() {
     const [newDate, setNewDate] = useState('');
     const [newTime, setNewTime] = useState('');
 
-    const mapBackendStatusToFrontend = (status: string): 'confirmed' | 'cancelled' | 'rescheduled' => {
+    const mapBackendStatusToFrontend = (status: string): 'confirmed' | 'cancelled' | 'rescheduled' | 'completed' => {
         switch (status) {
             case 'CANCELLED':
                 return 'cancelled';
             case 'RESCHEDULED':
                 return 'rescheduled';
+            case 'COMPLETED':
+                return 'completed';
             case 'CONFIRMED':
             case 'PENDING':
             default:
@@ -59,9 +62,6 @@ export default function Profile() {
                 const dateObj = new Date(b.date);
                 const dateStr = dateObj.toISOString().split('T')[0];
                 const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                
-                const paymentMatch = b.notes?.match(/Payment:\s*(\w+)/);
-                const paymentMethod = paymentMatch ? paymentMatch[1] : 'cash';
 
                 return {
                     id: b.id,
@@ -73,7 +73,8 @@ export default function Profile() {
                     time: timeStr,
                     price: b.service?.price || 0,
                     status: mapBackendStatusToFrontend(b.status),
-                    paymentMethod,
+                    paymentMethod: b.paymentMethod ? b.paymentMethod.toLowerCase() : 'cash',
+                    paymentStatus: b.paymentStatus || 'PENDING',
                 };
             });
             
@@ -94,10 +95,26 @@ export default function Profile() {
         try {
             const token = await getAccessTokenSilently();
             await updateAppointment(id, { status: 'CANCELLED' }, token);
-            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' as const } : b));
+            
+            // Check if it was prepaid to show refund message
             const booking = bookings.find(b => b.id === id);
-            if (booking) addNotification(`Booking at ${booking.salonName} has been cancelled.`, 'info');
-            showToast('Booking cancelled successfully.', 'success');
+            const isPrepaid = booking && booking.paymentStatus === 'PAID' && (booking.paymentMethod === 'momo' || booking.paymentMethod === 'card');
+            
+            setBookings(prev => prev.map(b => b.id === id ? { 
+                ...b, 
+                status: 'cancelled' as const, 
+                paymentStatus: isPrepaid ? 'REFUNDED' : b.paymentStatus 
+            } : b));
+            
+            if (booking) {
+                addNotification(`Booking at ${booking.salonName} has been cancelled.`, 'info');
+            }
+            
+            if (isPrepaid) {
+                showToast(`Booking cancelled. A refund of $${booking.price} has been sent to your wallet/card.`, 'success');
+            } else {
+                showToast('Booking cancelled successfully.', 'success');
+            }
         } catch (err) {
             console.error('Failed to cancel booking:', err);
             showToast('Failed to cancel booking. Please try again.', 'error');
@@ -253,14 +270,27 @@ export default function Profile() {
                                             {booking.paymentMethod && (
                                                 <span> • {paymentLabel[booking.paymentMethod] || booking.paymentMethod}</span>
                                             )}
+                                            {booking.paymentStatus && (
+                                                <span className={`badge-status ${booking.paymentStatus.toLowerCase()}`} style={{ marginLeft: '8px', fontSize: '0.65rem', padding: '2px 6px', display: 'inline-block', verticalAlign: 'middle' }}>
+                                                    {booking.paymentStatus}
+                                                </span>
+                                            )}
                                         </p>
                                     </div>
                                     <div className="booking-item-right">
-                                        <span className={`badge ${booking.status === 'cancelled' ? 'badge-cancelled' : booking.status === 'rescheduled' ? 'badge-rescheduled' : 'badge-confirmed'}`}>
-                                            {booking.status === 'cancelled' ? 'Cancelled' : booking.status === 'rescheduled' ? 'Rescheduled' : 'Confirmed'}
+                                        <span className={`badge ${
+                                            booking.status === 'cancelled' ? 'badge-cancelled'
+                                            : booking.status === 'rescheduled' ? 'badge-rescheduled'
+                                            : booking.status === 'completed' ? 'badge-completed'
+                                            : 'badge-confirmed'
+                                        }`}>
+                                            {booking.status === 'cancelled' ? 'Cancelled'
+                                            : booking.status === 'rescheduled' ? 'Rescheduled'
+                                            : booking.status === 'completed' ? 'Completed'
+                                            : 'Confirmed'}
                                         </span>
                                         <span className="booking-price">${booking.price}</span>
-                                        {booking.status === 'cancelled' ? (
+                                        {booking.status === 'cancelled' || booking.status === 'completed' ? (
                                             <button className="rebook-btn" onClick={() => handleBookAgain(booking)}>Book Again</button>
                                         ) : (
                                             <div className="booking-actions-row">
