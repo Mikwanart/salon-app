@@ -148,3 +148,22 @@ export const fetchBookedSlots = async (salonId: string, date: string): Promise<s
   }
   return response.json();
 };
+
+/** Fetches the salon owned by the logged-in salon owner. */
+export const fetchSalonOwnerSalon = async (token: string) => {
+  const response = await fetch(`${API_URL}/salons/mine`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch your salon');
+  return response.json();
+};
+
+/** Fetches all customer appointments booked at the owner's salon(s). */
+export const fetchSalonOwnerAppointments = async (token: string, page = 1, limit = 50) => {
+  const response = await fetch(`${API_URL}/salons/mine/appointments?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch salon appointments');
+  const json = await response.json();
+  return Array.isArray(json) ? json : (json.data ?? json);
+};
