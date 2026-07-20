@@ -167,3 +167,71 @@ export const fetchSalonOwnerAppointments = async (token: string, page = 1, limit
   const json = await response.json();
   return Array.isArray(json) ? json : (json.data ?? json);
 };
+
+export const updateSalonOwnerSalon = async (token: string, data: any) => {
+  const response = await fetch(`${API_URL}/salons/mine`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to update salon');
+  return response.json();
+};
+
+export const createSalonService = async (token: string, data: any) => {
+  const response = await fetch(`${API_URL}/salons/mine/services`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to create service');
+  return response.json();
+};
+
+export const updateSalonService = async (token: string, id: string, data: any) => {
+  const response = await fetch(`${API_URL}/salons/mine/services/${id}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to update service');
+  return response.json();
+};
+
+export const deleteSalonService = async (token: string, id: string) => {
+  const response = await fetch(`${API_URL}/salons/mine/services/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to delete service');
+  return response.json();
+};
+
+export const createSalonStylist = async (token: string, data: any) => {
+  const response = await fetch(`${API_URL}/salons/mine/stylists`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to create stylist');
+  return response.json();
+};
+
+export const updateSalonStylist = async (token: string, id: string, data: any) => {
+  const response = await fetch(`${API_URL}/salons/mine/stylists/${id}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to update stylist');
+  return response.json();
+};
+
+export const deleteSalonStylist = async (token: string, id: string) => {
+  const response = await fetch(`${API_URL}/salons/mine/stylists/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to delete stylist');
+  return response.json();
+};

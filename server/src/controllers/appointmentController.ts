@@ -170,6 +170,7 @@ export const updateAppointment = async (req: Request, res: Response): Promise<vo
     // Find the appointment first to check ownership
     const appointment = await prisma.appointment.findUnique({
       where: { id },
+      include: { salon: { select: { ownerId: true } } }
     });
 
     if (!appointment) {
@@ -177,7 +178,7 @@ export const updateAppointment = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    if (appointment.clientId !== user.id) {
+    if (appointment.clientId !== user.id && appointment.salon.ownerId !== user.id) {
       res.status(403).json({ error: 'You are not authorized to update this appointment' });
       return;
     }
