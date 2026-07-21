@@ -87,7 +87,10 @@ export const getSalonOwnerSalon = async (req: Request, res: Response): Promise<v
 
     const salon = await prisma.salon.findFirst({
       where: { ownerId: user.id },
-      include: { services: true, stylists: true },
+      include: {
+        services: { where: { isActive: true } },
+        stylists: { where: { isActive: true } },
+      },
     });
 
     if (!salon) {
@@ -167,11 +170,11 @@ export const updateSalonOwnerSalon = async (req: Request, res: Response): Promis
     const salon = await prisma.salon.findFirst({ where: { ownerId: user.id } });
     if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
 
-    const { name, description, address, city, state, zipCode, phone, coverImage, tags } = req.body;
+    const { name, description, address, city, state, zipCode, phone, coverImage } = req.body;
 
     const updated = await prisma.salon.update({
       where: { id: salon.id },
-      data: { name, description, address, city, state, zipCode, phone, coverImage, tags },
+      data: { name, description, address, city, state, zip: zipCode, phone, image: coverImage },
     });
 
     res.json(updated);
@@ -364,5 +367,54 @@ export const deleteSalonStylist = async (req: Request, res: Response): Promise<v
   } catch (error) {
     console.error('Error deleting stylist:', error);
     res.status(500).json({ error: 'Failed to delete stylist' });
+  }
+};
+
+export const registerSalon = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const auth0Id = req.auth?.payload.sub;
+    if (!auth0Id) { 
+      console.log('Register failed: No auth0Id');
+      res.status(401).json({ error: 'Unauthorized' }); 
+      return; 
+    }
+
+    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    if (!user) { 
+      console.log('Register failed: User not found for auth0Id', auth0Id);
+      res.status(404).json({ error: 'User not found' }); 
+      return; 
+    }
+
+    const { name, address, city, state, phone, email } = req.body;
+    if (!name || !address || !city || !state) {
+      console.log('Register failed: Missing required fields', req.body);
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    const salon = await prisma.salon.create({
+      data: {
+        name,
+        address,
+        city,
+        state,
+        phone,
+        email,
+        ownerId: user.id
+      }
+    });
+
+    if (user.role !== 'SALON_OWNER') {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { role: 'SALON_OWNER' }
+      });
+    }
+
+    res.status(201).json(salon);
+  } catch (error) {
+    console.error('Error registering salon:', error);
+    res.status(500).json({ error: 'Failed to register salon' });
   }
 };
