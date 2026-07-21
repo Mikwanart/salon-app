@@ -7,6 +7,8 @@
     "dev": "vite",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev --prefix server\"",
     "build": "tsc -b && vite build",
+    "build:server": "npm --prefix server install && npm --prefix server run build",
+    "start:server": "npm --prefix server start",
     "lint": "eslint .",
     "preview": "vite preview"
   },
