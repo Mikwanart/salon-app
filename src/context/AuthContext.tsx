@@ -43,19 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const syncUser = async () => {
             if (isAuthenticated && auth0User) {
-                // Enforce email verification if email exists
-                if (auth0User.email && auth0User.email_verified === false) {
-                    setIsEmailVerified(false);
-                    setUser(null);
-                    setRoles([]);
-                    setIsSalonOwner(false);
-                    setIsSyncing(false);
-                    return;
-                }
-                
-                setIsEmailVerified(true);
+                const emailVerified = auth0User.email_verified !== false;
+                setIsEmailVerified(emailVerified);
+
                 const newUser = {
-                    name: auth0User.name || 'User',
+                    name: auth0User.name || auth0User.email || 'User',
                     email: auth0User.email || '',
                     avatar: auth0User.picture,
                 };
@@ -63,11 +55,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 // Sync with backend
                 try {
-                    const token = await getAccessTokenSilently();
-                    const syncedUser = await syncUserToBackend(newUser, token);
-                    if (syncedUser?.role) {
-                        setRoles([syncedUser.role]);
-                        setIsSalonOwner(syncedUser.role === 'SALON_OWNER');
+                    const token = await getAccessTokenSilently().catch(err => {
+                        console.warn('Could not retrieve access token silently:', err);
+                        return null;
+                    });
+                    
+                    if (token) {
+                        const syncedUser = await syncUserToBackend(newUser, token).catch(err => {
+                            console.warn('Backend user sync failed:', err);
+                            return null;
+                        });
+                        if (syncedUser?.role) {
+                            const rawRole = String(syncedUser.role);
+                            const upperRole = rawRole.toUpperCase();
+                            const lowerRole = rawRole.toLowerCase();
+                            setRoles([rawRole, upperRole, lowerRole]);
+                            setIsSalonOwner(upperRole === 'SALON_OWNER');
+                        }
                     }
                 } catch (error) {
                     console.error('Failed to sync user:', error);

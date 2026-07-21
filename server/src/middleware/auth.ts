@@ -11,7 +11,7 @@ const ROLES_CLAIM = 'https://salon-api/roles';
 export const checkJwt = process.env.AUTH0_AUDIENCE && process.env.AUTH0_ISSUER_BASE_URL
   ? auth({
       audience: process.env.AUTH0_AUDIENCE,
-      issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+      issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL.replace(/\/$/, ''),
     })
   : (req: any, res: any, next: any) => {
       console.warn('⚠️  Auth0 is not fully configured. Bypassing Auth check. DO NOT DO THIS IN PRODUCTION!');
