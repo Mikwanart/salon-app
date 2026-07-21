@@ -12,6 +12,7 @@ import {
   createSalonStylist,
   updateSalonStylist,
   deleteSalonStylist,
+  registerSalon,
 } from '../controllers/salonController';
 import { checkJwt } from '../middleware/auth';
 
@@ -21,6 +22,7 @@ const router = Router();
 router.get('/', getSalons);
 
 // Owner routes — MUST be before /:id to avoid 'mine' being treated as an ID
+router.post('/register', checkJwt, registerSalon);
 router.get('/mine', checkJwt, getSalonOwnerSalon);
 router.put('/mine', checkJwt, updateSalonOwnerSalon);
 router.get('/mine/appointments', checkJwt, getSalonOwnerAppointments);

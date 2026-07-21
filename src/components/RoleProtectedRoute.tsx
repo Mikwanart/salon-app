@@ -9,7 +9,7 @@ interface RoleProtectedRouteProps {
 }
 
 export default function RoleProtectedRoute({ children, role }: RoleProtectedRouteProps) {
-    const { isLoggedIn, isLoading, login, roles } = useAuth();
+    const { isLoggedIn, isLoading, login, roles, isSalonOwner } = useAuth();
 
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -23,7 +23,9 @@ export default function RoleProtectedRoute({ children, role }: RoleProtectedRout
     }
 
     // User is logged in but doesn't have the required role
-    if (!roles.includes(role)) {
+    const hasAccess = role === 'salon_owner' ? isSalonOwner : roles.includes(role);
+
+    if (!hasAccess) {
         return (
             <div style={{
                 minHeight: '70vh',

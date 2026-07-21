@@ -11,22 +11,34 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
 
     const { email, name } = req.body;
 
-    // Check if user exists
+    // Check if user exists by auth0Id
     let user = await prisma.user.findUnique({
       where: { auth0Id },
     });
 
-    // If not, create them
-    if (!user) {
-      if (!email || !name) {
-         res.status(400).json({ error: 'Email and name are required for new users' });
-         return;
+    // If not found by auth0Id, check by email (in case they logged in with a different provider)
+    if (!user && email) {
+      user = await prisma.user.findUnique({ where: { email } });
+      if (user) {
+        console.log('Syncing existing user with new auth0Id:', email, auth0Id);
+        user = await prisma.user.update({
+          where: { email },
+          data: { auth0Id },
+        });
       }
+    }
+
+    // If still not found, create them
+    if (!user) {
+      const safeEmail = email || `${auth0Id}@placeholder.salonbook.com`;
+      const safeName = name || 'User';
+      
+      console.log('Creating new user:', safeEmail, safeName);
       user = await prisma.user.create({
         data: {
           auth0Id,
-          email,
-          name,
+          email: safeEmail,
+          name: safeName,
         },
       });
     }

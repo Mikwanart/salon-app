@@ -513,7 +513,12 @@ function StylistsTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
                                 <tr key={s.id}>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                            <img src={s.image || 'https://via.placeholder.com/40'} alt="" style={{width: 32, height: 32, borderRadius: '50%', objectFit: 'cover'}} />
+                                            <img 
+                                                src={s.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name || 'Stylist')}&background=random`} 
+                                                onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name || 'Stylist')}&background=random`; }}
+                                                alt="" 
+                                                style={{width: 32, height: 32, borderRadius: '50%', objectFit: 'cover'}} 
+                                            />
                                             {s.name}
                                         </div>
                                     </td>

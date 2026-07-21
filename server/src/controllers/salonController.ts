@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { autoSeedSalons } from '../lib/autoSeed';
 
 export const getSalons = async (req: Request, res: Response) => {
   try {
@@ -17,15 +18,29 @@ export const getSalons = async (req: Request, res: Response) => {
     const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10)));
     const skip = (page - 1) * limit;
 
-    const [salons, total] = await Promise.all([
+    let [salons, total] = await Promise.all([
       prisma.salon.findMany({
         where: whereClause,
-        include: { services: true, reviews: true },
+        include: { services: true, reviews: true, stylists: true },
         skip,
         take: limit,
       }),
       prisma.salon.count({ where: whereClause }),
     ]);
+
+    if (total === 0 && !search) {
+      console.log('🌱 Database empty. Auto-seeding initial salons...');
+      await autoSeedSalons();
+      [salons, total] = await Promise.all([
+        prisma.salon.findMany({
+          where: whereClause,
+          include: { services: true, reviews: true, stylists: true },
+          skip,
+          take: limit,
+        }),
+        prisma.salon.count({ where: whereClause }),
+      ]);
+    }
 
     res.json({ data: salons, total, page, limit });
   } catch (error) {

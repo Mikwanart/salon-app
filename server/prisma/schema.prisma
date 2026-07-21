@@ -28,7 +28,7 @@ model Salon {
   address      String
   city         String
   state        String
-  zip          String
+  zip          String?
   phone        String?
   email        String?
   image        String?
@@ -51,8 +51,8 @@ model Service {
   duration     Int
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  isActive     Boolean       @default(true)
   salonId      String
+  isActive     Boolean       @default(true)
   appointments Appointment[]
   salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
 }
@@ -96,8 +96,8 @@ model Stylist {
   image        String?
   rating       Float         @default(5.0)
   specialties  String[]
-  isActive     Boolean       @default(true)
   salonId      String
+  isActive     Boolean       @default(true)
   appointments Appointment[]
   salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
 }

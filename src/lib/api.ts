@@ -149,6 +149,16 @@ export const fetchBookedSlots = async (salonId: string, date: string): Promise<s
   return response.json();
 };
 
+export const registerSalon = async (token: string, data: any) => {
+  const response = await fetch(`${API_URL}/salons/register`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to register salon');
+  return response.json();
+};
+
 /** Fetches the salon owned by the logged-in salon owner. */
 export const fetchSalonOwnerSalon = async (token: string) => {
   const response = await fetch(`${API_URL}/salons/mine`, {

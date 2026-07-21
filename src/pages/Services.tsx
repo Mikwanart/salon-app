@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import CategoryPills from '../components/CategoryPills';
 import ServiceCard from '../components/ServiceCard';
-import { mapApiSalonToFrontendSalon, type Salon, type Service } from '../data';
+import { mapApiSalonToFrontendSalon, salons, type Salon, type Service } from '../data';
 import { fetchSalons } from '../lib/api';
 import './Services.css';
 
@@ -35,9 +35,14 @@ export default function Services() {
             setIsLoading(true);
             try {
                 const data = await fetchSalons();
-                setApiSalons(data.map((s: any) => mapApiSalonToFrontendSalon(s, userCoords)));
+                if (Array.isArray(data) && data.length > 0) {
+                    setApiSalons(data.map((s: any) => mapApiSalonToFrontendSalon(s, userCoords)));
+                } else {
+                    setApiSalons(salons);
+                }
             } catch (err) {
                 console.error("Failed to fetch salons:", err);
+                setApiSalons(salons);
             } finally {
                 setIsLoading(false);
             }

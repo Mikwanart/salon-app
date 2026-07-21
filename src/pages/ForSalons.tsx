@@ -1,4 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useAuth0 } from '@auth0/auth0-react';
+import { registerSalon } from '../lib/api';
 import { TrendingUp, Calendar, Star, Shield, BarChart2, Users } from 'lucide-react';
 import './ForSalons.css';
 
@@ -63,6 +67,27 @@ const plans = [
 ];
 
 export default function ForSalons() {
+    const { isLoggedIn, login, isSalonOwner } = useAuth();
+    const { getAccessTokenSilently } = useAuth0();
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formData, setFormData] = useState({ name: '', address: '', city: '', state: '', phone: '', email: '' });
+
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const token = await getAccessTokenSilently();
+            await registerSalon(token, formData);
+            window.location.href = '/dashboard'; // Force full reload to resync user role
+        } catch(e) {
+            console.error('Registration failed', e);
+            alert('Failed to register salon. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <main className="for-salons-page">
             {/* Hero */}
@@ -73,10 +98,56 @@ export default function ForSalons() {
                         <h1>Grow your salon with <em>SalonBook</em></h1>
                         <p>The all-in-one platform to manage bookings, wow clients, and grow your business — starting free.</p>
                         <div className="fs-hero-actions">
-                            <Link to="/signup" className="btn btn-primary">Get Started Free</Link>
-                            <a href="#features" className="btn btn-outline">See Features →</a>
+                            {!isRegistering ? (
+                                <>
+                                    {!isLoggedIn ? (
+                                        <button onClick={() => login()} className="btn btn-primary">Get Started Free</button>
+                                    ) : isSalonOwner ? (
+                                        <Link to="/dashboard" className="btn btn-primary">Go to Dashboard</Link>
+                                    ) : (
+                                        <button onClick={() => setIsRegistering(true)} className="btn btn-primary">Create Your Salon</button>
+                                    )}
+                                    <a href="#features" className="btn btn-outline">See Features →</a>
+                                </>
+                            ) : (
+                                <form onSubmit={handleRegister} className="fs-reg-form fade-in">
+                                    <h3>Register Your Salon</h3>
+                                    
+                                    <div className="form-group" style={{ marginBottom: 16 }}>
+                                        <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Salon Name</label>
+                                        <input type="text" className="fs-reg-input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+                                    </div>
+                                    
+                                    <div className="form-group" style={{ marginBottom: 16 }}>
+                                        <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Phone Number</label>
+                                        <input type="tel" className="fs-reg-input" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required />
+                                    </div>
+                                    
+                                    <div className="form-group" style={{ marginBottom: 16 }}>
+                                        <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Street Address</label>
+                                        <input type="text" className="fs-reg-input" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} required />
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+                                        <div className="form-group" style={{ flex: 1 }}>
+                                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>City</label>
+                                            <input type="text" className="fs-reg-input" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} required />
+                                        </div>
+                                        <div className="form-group" style={{ flex: 1 }}>
+                                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Region</label>
+                                            <input type="text" className="fs-reg-input" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} required />
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isSubmitting}>{isSubmitting ? 'Registering...' : 'Complete Registration'}</button>
+                                        <button type="button" className="btn btn-outline" onClick={() => setIsRegistering(false)}>Cancel</button>
+                                    </div>
+                                </form>
+                            )}
                         </div>
                     </div>
+
                     <div className="fs-hero-stats">
                         <div className="fs-stat"><span className="fs-stat-val">12,000+</span><span>Salons</span></div>
                         <div className="fs-stat"><span className="fs-stat-val">4.9★</span><span>Avg Rating</span></div>
@@ -125,9 +196,9 @@ export default function ForSalons() {
                                         <li key={feat}>✓ {feat}</li>
                                     ))}
                                 </ul>
-                                <Link to="/signup" className={`btn ${plan.highlight ? 'btn-primary' : 'btn-outline'} fs-plan-btn`}>
+                                <button onClick={() => !isLoggedIn ? login() : setIsRegistering(true)} className={`btn ${plan.highlight ? 'btn-primary' : 'btn-outline'} fs-plan-btn`}>
                                     {plan.cta}
-                                </Link>
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -139,7 +210,13 @@ export default function ForSalons() {
                 <div className="container fs-cta-inner">
                     <h2>Ready to transform your salon?</h2>
                     <p>Join thousands of salon owners who trust SalonBook to run their business.</p>
-                    <Link to="/signup" className="btn btn-primary">Create Free Account</Link>
+                    {!isLoggedIn ? (
+                        <button onClick={() => login()} className="btn btn-primary">Create Free Account</button>
+                    ) : isSalonOwner ? (
+                        <Link to="/dashboard" className="btn btn-primary">Go to Dashboard</Link>
+                    ) : (
+                        <button onClick={() => { setIsRegistering(true); window.scrollTo(0,0); }} className="btn btn-primary">Create Your Salon</button>
+                    )}
                 </div>
             </section>
         </main>

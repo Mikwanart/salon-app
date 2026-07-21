@@ -221,6 +221,44 @@
     flex: 1;
 }
 
+.mgmt-form .form-group {
+    margin-bottom: 20px;
+}
+
+.mgmt-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.mgmt-form input,
+.mgmt-form textarea,
+.mgmt-form select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.mgmt-form input:focus,
+.mgmt-form textarea:focus,
+.mgmt-form select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.mgmt-form input::placeholder,
+.mgmt-form textarea::placeholder {
+    color: var(--text-muted);
+}
+
 .btn-icon {
     background: none;
     border: none;

@@ -6,14 +6,14 @@ import salonRoutes from './routes/salonRoutes';
 import userRoutes from './routes/userRoutes';
 import appointmentRoutes from './routes/appointmentRoutes';
 import reviewRoutes from './routes/reviewRoutes';
-
-
+import { autoSeedSalons } from './lib/autoSeed';
 
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Allow all origins so frontend requests are never blocked by CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: true,
   credentials: true,
 }));
 
@@ -46,4 +46,5 @@ process.on('exit', (code) => {
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  autoSeedSalons().catch((err) => console.error('Error during auto-seed:', err));
 });

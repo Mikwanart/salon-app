@@ -5,7 +5,7 @@ import CategoryPills from '../components/CategoryPills';
 import ServiceCard from '../components/ServiceCard';
 import SalonCard from '../components/SalonCard';
 import SkeletonCard from '../components/SkeletonCard';
-import { services, mapApiSalonToFrontendSalon, type Salon } from '../data';
+import { services, mapApiSalonToFrontendSalon, salons, type Salon } from '../data';
 import { fetchSalons } from '../lib/api';
 import './Home.css';
 
@@ -38,9 +38,14 @@ export default function Home() {
             setIsLoading(true);
             try {
                 const data = await fetchSalons();
-                setApiSalons(data.map((s: any) => mapApiSalonToFrontendSalon(s, userCoords)));
+                if (Array.isArray(data) && data.length > 0) {
+                    setApiSalons(data.map((s: any) => mapApiSalonToFrontendSalon(s, userCoords)));
+                } else {
+                    setApiSalons(salons);
+                }
             } catch (err) {
                 console.error("Failed to fetch salons:", err);
+                setApiSalons(salons);
             } finally {
                 setIsLoading(false);
             }
