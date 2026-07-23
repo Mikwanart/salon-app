@@ -62,7 +62,7 @@ export default function Booking() {
 
     const { showToast } = useToast();
     const { user } = useAuth();
-    const { addNotification } = useNotifications();
+    const { addNotification, addNotificationForUser } = useNotifications();
     const [step, setStep] = useState(preselectedService ? 1 : 0);
     const [selectedService, setSelectedService] = useState(preselectedService);
     const [selectedStylist, setSelectedStylist] = useState('');
@@ -375,11 +375,26 @@ export default function Booking() {
             // Transition to success screen
             setPaymentSimulationStep('success');
             setTimeout(() => {
-                showToast('Booking confirmed! 🎉', 'success');
+                showToast('Booking submitted! Pending salon approval. ⏳', 'success');
+                
+                // Client in-app notification
                 addNotification(
-                    `Booking confirmed at ${salon.name} on ${selectedDate} at ${selectedTime}.`,
-                    'success'
+                    `Your booking for ${bookedService?.name || 'service'} at ${salon.name} on ${selectedDate} at ${selectedTime} was submitted and is pending salon approval.`,
+                    'info',
+                    { appointmentId: result.id, status: 'PENDING', salonName: salon.name }
                 );
+
+                // Salon owner in-app notification (e.g. mikenart7@gmail.com)
+                const ownerEmail = (salon as any)?.owner?.email || (salon as any)?.email || 'mikenart7@gmail.com';
+                addNotificationForUser(ownerEmail, {
+                    message: `🔔 New booking request from ${name} for ${bookedService?.name || 'Service'} on ${selectedDate} at ${selectedTime}.`,
+                    type: 'warning',
+                    appointmentId: result.id,
+                    status: 'PENDING',
+                    salonName: salon.name,
+                    actions: ['accept', 'decline']
+                });
+
                 setConfirmed(true);
                 setPaymentSimulationStep('none');
             }, 1500);

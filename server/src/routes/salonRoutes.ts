@@ -4,6 +4,7 @@ import {
   getSalonById,
   getSalonServices,
   getSalonOwnerSalon,
+  getSalonOwnerSalons,
   getSalonOwnerAppointments,
   updateSalonOwnerSalon,
   createSalonService,
@@ -24,6 +25,7 @@ router.get('/', getSalons);
 // Owner routes — MUST be before /:id to avoid 'mine' being treated as an ID
 router.post('/register', checkJwt, registerSalon);
 router.get('/mine', checkJwt, getSalonOwnerSalon);
+router.get('/mine/all', checkJwt, getSalonOwnerSalons);
 router.put('/mine', checkJwt, updateSalonOwnerSalon);
 router.get('/mine/appointments', checkJwt, getSalonOwnerAppointments);
 

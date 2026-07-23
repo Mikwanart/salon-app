@@ -155,7 +155,14 @@ export const registerSalon = async (token: string, data: any) => {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('Failed to register salon');
+  if (!response.ok) {
+    let errMsg = 'Failed to register salon';
+    try {
+      const errData = await response.json();
+      if (errData && errData.error) errMsg = errData.error;
+    } catch (_) {}
+    throw new Error(errMsg);
+  }
   return response.json();
 };
 
@@ -164,7 +171,30 @@ export const fetchSalonOwnerSalon = async (token: string) => {
   const response = await fetch(`${API_URL}/salons/mine`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!response.ok) throw new Error('Failed to fetch your salon');
+  if (!response.ok) {
+    let errMsg = 'Failed to fetch your salon';
+    try {
+      const errData = await response.json();
+      if (errData && errData.error) errMsg = errData.error;
+    } catch (_) {}
+    throw new Error(errMsg);
+  }
+  return response.json();
+};
+
+/** Fetches all salons owned by the logged-in salon owner. */
+export const fetchSalonOwnerSalons = async (token: string) => {
+  const response = await fetch(`${API_URL}/salons/mine/all`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    let errMsg = 'Failed to fetch your salons';
+    try {
+      const errData = await response.json();
+      if (errData && errData.error) errMsg = errData.error;
+    } catch (_) {}
+    throw new Error(errMsg);
+  }
   return response.json();
 };
 
@@ -245,3 +275,60 @@ export const deleteSalonStylist = async (token: string, id: string) => {
   if (!response.ok) throw new Error('Failed to delete stylist');
   return response.json();
 };
+
+// Admin API Functions
+export const fetchAdminStats = async (token: string) => {
+  const response = await fetch(`${API_URL}/admin/stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch admin stats');
+  return response.json();
+};
+
+export const fetchAdminSalons = async (token: string, status: string = 'ALL', search: string = '', page: number = 1) => {
+  const url = `${API_URL}/admin/salons?status=${encodeURIComponent(status)}&search=${encodeURIComponent(search)}&page=${page}`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch admin salons');
+  return response.json();
+};
+
+export const updateSalonStatus = async (token: string, id: string, status: string) => {
+  const response = await fetch(`${API_URL}/admin/salons/${id}/status`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) throw new Error('Failed to update salon status');
+  return response.json();
+};
+
+export const fetchAdminUsers = async (token: string, role: string = 'ALL', search: string = '', page: number = 1) => {
+  const url = `${API_URL}/admin/users?role=${encodeURIComponent(role)}&search=${encodeURIComponent(search)}&page=${page}`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch admin users');
+  return response.json();
+};
+
+export const updateUserRole = async (token: string, id: string, role: string) => {
+  const response = await fetch(`${API_URL}/admin/users/${id}/role`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  if (!response.ok) throw new Error('Failed to update user role');
+  return response.json();
+};
+
+export const fetchAdminAppointments = async (token: string, status: string = 'ALL', search: string = '', page: number = 1) => {
+  const url = `${API_URL}/admin/appointments?status=${encodeURIComponent(status)}&search=${encodeURIComponent(search)}&page=${page}`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch admin appointments');
+  return response.json();
+};
+

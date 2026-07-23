@@ -32,14 +32,22 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
     if (!user) {
       const safeEmail = email || `${auth0Id}@placeholder.salonbook.com`;
       const safeName = name || 'User';
+      const initialRole = safeEmail.toLowerCase() === 'mikwanart7@gmail.com' ? 'ADMIN' : 'CLIENT';
       
-      console.log('Creating new user:', safeEmail, safeName);
+      console.log('Creating new user:', safeEmail, safeName, 'Role:', initialRole);
       user = await prisma.user.create({
         data: {
           auth0Id,
           email: safeEmail,
           name: safeName,
+          role: initialRole,
         },
+      });
+    } else if (user.email.toLowerCase() === 'mikwanart7@gmail.com' && user.role !== 'ADMIN') {
+      console.log('Promoting mikwanart7@gmail.com to ADMIN role in DB');
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { role: 'ADMIN' },
       });
     }
 

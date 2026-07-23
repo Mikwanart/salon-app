@@ -1,23 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNotifications } from '../context/NotificationContext';
-import { Scissors, User, LogOut, Sun, Moon, Bell, LayoutDashboard, X, CheckCheck } from 'lucide-react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { updateAppointment } from '../lib/api';
+import { Scissors, User, LogOut, Sun, Moon, Bell, LayoutDashboard, X, CheckCheck, ShieldCheck, ChevronRight, ArrowRight } from 'lucide-react';
 import './Navbar.css';
 import './NavbarExtensions.css';
-
 
 export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [bellOpen, setBellOpen] = useState(false);
     const bellRef = useRef<HTMLDivElement>(null);
 
-    const { user, isLoggedIn, login, logout } = useAuth();
+    const { user, isLoggedIn, login, logout, isSalonOwner, isAdmin } = useAuth();
+    const { getAccessTokenSilently } = useAuth0();
     const { showToast } = useToast();
     const { isDark, toggle } = useTheme();
-    const { notifications, unreadCount, markAllRead, clearAll } = useNotifications();
+    const { notifications, unreadCount, markAllRead, clearAll, updateNotificationActionStatus } = useNotifications();
     const location = useLocation();
 
     const handleLogout = () => {
@@ -37,6 +40,18 @@ export default function Navbar() {
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
+
+    // Prevent body scroll when mobile menu is open
+    useEffect(() => {
+        if (menuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [menuOpen]);
 
     const handleBellOpen = () => {
         setBellOpen(prev => !prev);
@@ -60,6 +75,18 @@ export default function Navbar() {
         error: '❌',
     };
 
+    const handleNotificationAction = async (notif: any, action: 'CONFIRMED' | 'CANCELLED') => {
+        if (!notif.appointmentId) return;
+        try {
+            const token = await getAccessTokenSilently();
+            await updateAppointment(notif.appointmentId, { status: action }, token);
+            updateNotificationActionStatus(notif.appointmentId, action);
+            showToast(`Appointment ${action === 'CONFIRMED' ? 'Accepted' : 'Declined'}`, action === 'CONFIRMED' ? 'success' : 'info');
+        } catch (e) {
+            showToast('Failed to update appointment status', 'error');
+        }
+    };
+
     return (
         <nav className="navbar">
             <div className="navbar-inner container">
@@ -70,31 +97,39 @@ export default function Navbar() {
                     <span className="brand-text">SalonBook</span>
                 </Link>
 
-                <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
+                {/* DESKTOP NAVIGATION LINKS */}
+                <div className="navbar-links desktop-only-links">
                     <Link
                         to="/services"
                         className={`nav-link ${isActive('/services') ? 'active' : ''}`}
-                        onClick={() => setMenuOpen(false)}
                     >
                         Find Services
                     </Link>
                     <Link
                         to="/for-salons"
                         className={`nav-link ${isActive('/for-salons') ? 'active' : ''}`}
-                        onClick={() => setMenuOpen(false)}
                     >
                         For Salons
                     </Link>
                     <Link
                         to="/about"
                         className={`nav-link ${isActive('/about') ? 'active' : ''}`}
-                        onClick={() => setMenuOpen(false)}
                     >
                         About
                     </Link>
+                    {isAdmin && (
+                        <Link
+                            to="/admin"
+                            className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+                            style={{ color: 'var(--primary)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                            <ShieldCheck size={16} /> Admin Panel
+                        </Link>
+                    )}
                 </div>
 
-                <div className="navbar-actions">
+                {/* DESKTOP NAVIGATION ACTIONS */}
+                <div className="navbar-actions desktop-only-actions">
                     {/* Notification Bell */}
                     {isLoggedIn && (
                         <div className="bell-wrapper" ref={bellRef}>
@@ -135,6 +170,24 @@ export default function Navbar() {
                                                     <div className="notif-body">
                                                         <p className="notif-msg">{n.message}</p>
                                                         <span className="notif-time">{formatTime(n.timestamp)}</span>
+                                                        {n.actions && n.actions.length > 0 && (
+                                                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                                <button 
+                                                                    className="btn btn-sm" 
+                                                                    style={{ backgroundColor: '#10b981', color: '#fff', padding: '4px 10px', fontSize: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                                                    onClick={() => handleNotificationAction(n, 'CONFIRMED')}
+                                                                >
+                                                                    Accept
+                                                                </button>
+                                                                <button 
+                                                                    className="btn btn-sm" 
+                                                                    style={{ backgroundColor: '#ef4444', color: '#fff', padding: '4px 10px', fontSize: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                                                    onClick={() => handleNotificationAction(n, 'CANCELLED')}
+                                                                >
+                                                                    Decline
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))
@@ -155,15 +208,22 @@ export default function Navbar() {
 
                     {isLoggedIn ? (
                         <div className="nav-user">
-                            <Link to="/profile" className="nav-profile-link" onClick={() => setMenuOpen(false)}>
+                            <Link to="/profile" className="nav-profile-link">
                                 <div className="nav-avatar">
                                     {user?.avatar ? <img src={user.avatar} alt="" /> : <User size={20} />}
                                 </div>
                                 <span className="nav-user-name">{user?.name}</span>
                             </Link>
-                            <Link to="/dashboard" className="nav-dashboard-link" title="Dashboard" onClick={() => setMenuOpen(false)}>
-                                <LayoutDashboard size={18} />
-                            </Link>
+                            {isSalonOwner && (
+                                <Link to="/dashboard" className="nav-dashboard-link" title="Owner Dashboard">
+                                    <LayoutDashboard size={18} />
+                                </Link>
+                            )}
+                            {isAdmin && (
+                                <Link to="/admin" className="nav-dashboard-link" title="Admin Control Panel" style={{ color: 'var(--primary)' }}>
+                                    <ShieldCheck size={18} />
+                                </Link>
+                            )}
                             <button onClick={handleLogout} className="nav-login">
                                 <LogOut size={18} />
                                 <span>Logout</span>
@@ -171,16 +231,17 @@ export default function Navbar() {
                         </div>
                     ) : (
                         <>
-                            <button className="nav-login" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={() => { setMenuOpen(false); login(); }}>
+                            <button className="nav-login" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={() => login()}>
                                 Login
                             </button>
-                            <Link to="/booking" className="btn btn-primary nav-book" onClick={() => setMenuOpen(false)}>
+                            <Link to="/booking" className="btn btn-primary nav-book">
                                 Book Now
                             </Link>
                         </>
                     )}
                 </div>
 
+                {/* TRIPLE DASHED HAMBURGER BUTTON (MOBILE ONLY) */}
                 <button
                     className={`hamburger ${menuOpen ? 'open' : ''}`}
                     onClick={() => setMenuOpen(!menuOpen)}
@@ -191,6 +252,89 @@ export default function Navbar() {
                     <span></span>
                 </button>
             </div>
+
+            {/* FRESHA-STYLE FULLSCREEN MOBILE MENU OVERLAY (MOUNTED TO BODY VIA PORTAL) */}
+            {menuOpen && createPortal(
+                <div className="fresha-mobile-menu">
+                    <div className="fresha-mobile-header">
+                        <button className="fresha-close-btn" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    <div className="fresha-mobile-content">
+                        <h2 className="fresha-heading">{isLoggedIn ? `Hello, ${user?.name?.split(' ')[0] || 'User'}` : 'For customers'}</h2>
+
+                        {/* Customer Options Card */}
+                        <div className="fresha-card">
+                            {!isLoggedIn ? (
+                                <button className="fresha-row primary-text" onClick={() => { setMenuOpen(false); login(); }}>
+                                    <span>Log in or sign up</span>
+                                    <ChevronRight size={20} className="fresha-chevron" />
+                                </button>
+                            ) : (
+                                <Link to="/profile" className="fresha-row primary-text" onClick={() => setMenuOpen(false)}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div className="nav-avatar" style={{ width: '28px', height: '28px', fontSize: '0.75rem' }}>
+                                            {user?.avatar ? <img src={user.avatar} alt="" /> : <User size={16} />}
+                                        </div>
+                                        <span>My Profile</span>
+                                    </div>
+                                    <ChevronRight size={20} className="fresha-chevron" />
+                                </Link>
+                            )}
+
+                            <Link to="/services" className="fresha-row" onClick={() => setMenuOpen(false)}>
+                                <span>Find Services</span>
+                                <ChevronRight size={20} className="fresha-chevron" />
+                            </Link>
+
+                            <Link to="/about" className="fresha-row" onClick={() => setMenuOpen(false)}>
+                                <span>About us</span>
+                                <ChevronRight size={20} className="fresha-chevron" />
+                            </Link>
+
+                            <button className="fresha-row" onClick={toggle}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                                    {isDark ? 'Light mode' : 'Dark mode'}
+                                </span>
+                                <ChevronRight size={20} className="fresha-chevron" />
+                            </button>
+                        </div>
+
+                        {/* Business / Account Card */}
+                        <div className="fresha-card">
+                            <Link to="/for-salons" className="fresha-row font-medium" onClick={() => setMenuOpen(false)}>
+                                <span>For businesses</span>
+                                <ArrowRight size={22} className="fresha-arrow" />
+                            </Link>
+
+                            {isLoggedIn && isSalonOwner && (
+                                <Link to="/dashboard" className="fresha-row font-medium" onClick={() => setMenuOpen(false)}>
+                                    <span>Salon Owner Dashboard</span>
+                                    <ArrowRight size={22} className="fresha-arrow" />
+                                </Link>
+                            )}
+
+                            {isLoggedIn && isAdmin && (
+                                <Link to="/admin" className="fresha-row font-medium" style={{ color: 'var(--primary)' }} onClick={() => setMenuOpen(false)}>
+                                    <span>Admin Panel</span>
+                                    <ArrowRight size={22} className="fresha-arrow" />
+                                </Link>
+                            )}
+
+                            {isLoggedIn && (
+                                <button className="fresha-row font-medium text-danger" onClick={() => { setMenuOpen(false); handleLogout(); }}>
+                                    <span>Log out</span>
+                                    <ArrowRight size={22} className="fresha-arrow" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </nav>
     );
 }

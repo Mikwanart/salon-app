@@ -16,9 +16,10 @@ model User {
   phone     String?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
-  bookings  Appointment[] @relation("ClientBookings")
-  reviews   Review[]
-  salons    Salon[]       @relation("SalonOwner")
+  bookings      Appointment[]  @relation("ClientBookings")
+  reviews       Review[]
+  salons        Salon[]        @relation("SalonOwner")
+  notifications Notification[]
 }
 
 model Salon {
@@ -32,6 +33,7 @@ model Salon {
   phone        String?
   email        String?
   image        String?
+  status       SalonStatus   @default(APPROVED)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   ownerId      String
@@ -127,4 +129,22 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+}
+
+enum SalonStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  message   String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

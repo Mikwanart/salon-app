@@ -13,6 +13,7 @@ import About from './pages/About';
 import ForSalons from './pages/ForSalons';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import { useAuth } from './context/AuthContext';
 
@@ -41,6 +42,7 @@ function AppContent() {
         <Route path="/for-salons" element={<ForSalons />} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/dashboard" element={<RoleProtectedRoute role="salon_owner"><Dashboard /></RoleProtectedRoute>} />
+        <Route path="/admin" element={<RoleProtectedRoute role="admin"><AdminDashboard /></RoleProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

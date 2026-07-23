@@ -88,6 +88,9 @@ export const createAppointment = async (req: Request, res: Response): Promise<vo
       },
     });
 
+    // Notify salon owner of new booking request
+    triggerOwnerNewBookingNotification(appointment.id);
+
     if (appointment.paymentMethod === 'CASH' || appointment.paymentMethod === 'CARD') {
       triggerConfirmationNotification(appointment.id);
     }
@@ -228,7 +231,9 @@ export const updateAppointment = async (req: Request, res: Response): Promise<vo
       }
     });
 
-    if (status === 'CANCELLED') {
+    if (status === 'CONFIRMED') {
+      triggerAcceptedNotification(updatedAppointment.id);
+    } else if (status === 'CANCELLED') {
       triggerCancellationNotification(updatedAppointment.id);
     }
 
@@ -328,6 +333,46 @@ export const verifyPaymentStatus = async (req: Request, res: Response): Promise<
 };
 
 // Helper functions for sending notifications asynchronously in the background
+const triggerOwnerNewBookingNotification = async (appointmentId: string) => {
+  try {
+    const fullAppt = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        client: true,
+        service: true,
+        salon: {
+          include: { owner: true }
+        },
+        stylist: true
+      }
+    });
+    if (fullAppt) {
+      await notificationService.sendOwnerNewBookingNotification(fullAppt);
+    }
+  } catch (err) {
+    console.error('Failed to trigger owner new booking notification:', err);
+  }
+};
+
+const triggerAcceptedNotification = async (appointmentId: string) => {
+  try {
+    const fullAppt = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        client: true,
+        service: true,
+        salon: true,
+        stylist: true
+      }
+    });
+    if (fullAppt) {
+      await notificationService.sendBookingAccepted(fullAppt);
+    }
+  } catch (err) {
+    console.error('Failed to trigger accepted notification:', err);
+  }
+};
+
 const triggerConfirmationNotification = async (appointmentId: string) => {
   try {
     const fullAppt = await prisma.appointment.findUnique({
@@ -359,7 +404,7 @@ const triggerCancellationNotification = async (appointmentId: string) => {
       }
     });
     if (fullAppt) {
-      await notificationService.sendBookingCancellation(fullAppt);
+      await notificationService.sendBookingDeclined(fullAppt);
     }
   } catch (err) {
     console.error('Failed to trigger cancellation notification:', err);

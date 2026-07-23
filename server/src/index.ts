@@ -6,6 +6,7 @@ import salonRoutes from './routes/salonRoutes';
 import userRoutes from './routes/userRoutes';
 import appointmentRoutes from './routes/appointmentRoutes';
 import reviewRoutes from './routes/reviewRoutes';
+import adminRoutes from './routes/adminRoutes';
 import { autoSeedSalons } from './lib/autoSeed';
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/salons', salonRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
 
 process.on('beforeExit', (code) => {
   console.log('DEBUG: process beforeExit event with code:', code);

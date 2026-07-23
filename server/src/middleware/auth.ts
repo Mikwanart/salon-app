@@ -34,3 +34,30 @@ export const requireRole = (role: string) => (req: Request, res: Response, next:
   }
   next();
 };
+
+export const requireAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const auth0Id = req.auth?.payload.sub;
+    if (!auth0Id) {
+      res.status(401).json({ error: 'Unauthorized: missing token user ID' });
+      return;
+    }
+
+    const { prisma } = await import('../lib/prisma');
+    const user = await prisma.user.findUnique({ where: { auth0Id } });
+
+    if (!user || user.role !== 'ADMIN') {
+      const jwtRoles: string[] = (req.auth?.payload as any)?.[ROLES_CLAIM] ?? [];
+      const hasAdminJwt = jwtRoles.map(r => r.toUpperCase()).includes('ADMIN');
+      if (!hasAdminJwt) {
+        res.status(403).json({ error: 'Forbidden: Admin privileges required' });
+        return;
+      }
+    }
+
+    next();
+  } catch (err) {
+    console.error('Error in requireAdmin middleware:', err);
+    res.status(500).json({ error: 'Internal server error validating admin permissions' });
+  }
+};

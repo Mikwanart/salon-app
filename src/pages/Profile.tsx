@@ -25,7 +25,7 @@ interface Booking {
 export default function Profile() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { addNotification } = useNotifications();
+    const { addNotification, syncWithAppointments } = useNotifications();
     const { getAccessTokenSilently } = useAuth0();
     const { showToast } = useToast();
     
@@ -57,6 +57,7 @@ export default function Profile() {
         try {
             const token = await getAccessTokenSilently();
             const data = await fetchMyAppointments(token);
+            syncWithAppointments(data, false);
             
             const mappedBookings: Booking[] = data.map((b: any) => {
                 const dateObj = new Date(b.date);

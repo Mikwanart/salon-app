@@ -385,6 +385,215 @@ class NotificationService {
     }
     await this.sendSms(clientPhone, smsBody);
   }
+
+  /**
+   * Sends new booking notification to the salon owner (e.g. mikenart7@gmail.com).
+   */
+  async sendOwnerNewBookingNotification(appointment: any): Promise<void> {
+    const ownerEmail = appointment.salon?.owner?.email || appointment.salon?.email || 'mikenart7@gmail.com';
+    const ownerPhone = appointment.salon?.owner?.phone || appointment.salon?.phone || '';
+    const ownerName  = appointment.salon?.owner?.name || 'Salon Owner';
+
+    const clientName  = appointment.client?.name || 'Client';
+    const clientEmail = appointment.client?.email || 'N/A';
+    const clientPhone = appointment.client?.phone || appointment.paymentDetails || 'N/A';
+    const serviceName = appointment.service?.name || 'Service';
+    const price       = appointment.service?.price || 0;
+    const salonName   = appointment.salon?.name || 'Salon';
+    const notes       = appointment.notes || 'None';
+
+    const dateStr = new Date(appointment.date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    
+    const timeStr = new Date(appointment.date).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    console.log(`\n🔔 [NOTIFY SALON OWNER] New booking request for ${salonName} sent to owner ${ownerEmail}`);
+
+    try {
+      const transporter = await this.getTransporter();
+      const from = process.env.SMTP_FROM || 'SalonBook <no-reply@salonbook.com>';
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Inter', sans-serif; background-color: #f7fafc; color: #1a202c; padding: 24px; margin: 0; }
+            .container { max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; margin: 0 auto; border: 1px solid #edf2f7; }
+            .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff; padding: 32px 24px; text-align: center; }
+            .header h1 { margin: 0; font-size: 1.6rem; font-weight: 700; }
+            .body { padding: 32px 24px; }
+            .details-card { background-color: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #e2e8f0; }
+            .details-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; }
+            .label { color: #64748b; font-weight: 500; }
+            .value { color: #0f172a; font-weight: 600; text-align: right; }
+            .action-box { background-color: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; }
+            .btn { display: inline-block; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; margin: 0 8px; }
+            .btn-accept { background-color: #10b981; color: #ffffff; }
+            .btn-decline { background-color: #ef4444; color: #ffffff; }
+            .footer { text-align: center; padding: 20px; font-size: 0.8rem; color: #94a3b8; background-color: #f8fafc; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔔 New Booking Request</h1>
+            </div>
+            <div class="body">
+              <p>Hi <strong>${ownerName}</strong>,</p>
+              <p>You have received a new appointment request for <strong>${salonName}</strong>.</p>
+              
+              <div class="details-card">
+                <div class="details-row"><span class="label">Client Name</span><span class="value">${clientName}</span></div>
+                <div class="details-row"><span class="label">Client Email</span><span class="value">${clientEmail}</span></div>
+                <div class="details-row"><span class="label">Client Phone</span><span class="value">${clientPhone}</span></div>
+                <div class="details-row"><span class="label">Service</span><span class="value">${serviceName} ($${price})</span></div>
+                <div class="details-row"><span class="label">Date & Time</span><span class="value">${dateStr} at ${timeStr}</span></div>
+                <div class="details-row"><span class="label">Notes</span><span class="value">${notes}</span></div>
+                <div class="details-row"><span class="label">Status</span><span class="value" style="color:#f59e0b;">PENDING APPROVAL</span></div>
+              </div>
+
+              <div class="action-box">
+                <p style="margin-top:0; font-weight:600; color:#3730a3;">Please log in to your Salon Dashboard to Accept or Decline this booking.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} ${salonName}. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      await transporter.sendMail({
+        from,
+        to: ownerEmail,
+        subject: `[Action Required] New Booking Request for ${salonName}: ${serviceName} on ${dateStr}`,
+        html: htmlContent
+      });
+
+      console.log(`✉️ Owner notification email sent to ${ownerEmail}`);
+    } catch (err) {
+      console.error('❌ Failed to send owner booking email:', err);
+    }
+
+    if (ownerPhone) {
+      const sms = `New booking request for ${salonName}! ${clientName} requested ${serviceName} on ${dateStr} at ${timeStr}. Log in to your dashboard to Accept or Decline.`;
+      await this.sendSms(ownerPhone, sms);
+    }
+  }
+
+  /**
+   * Sends booking acceptance notification to client.
+   */
+  async sendBookingAccepted(appointment: any): Promise<void> {
+    const clientEmail = appointment.client?.email || 'test@example.com';
+    const clientPhone = appointment.client?.phone || appointment.paymentDetails || '';
+    const clientName  = appointment.client?.name || 'Valued Client';
+    const serviceName = appointment.service?.name || 'Salon Service';
+    const salonName   = appointment.salon?.name || 'Salon';
+    
+    const dateStr = new Date(appointment.date).toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+    const timeStr = new Date(appointment.date).toLocaleTimeString('en-US', {
+      hour: '2-digit', minute: '2-digit',
+    });
+
+    console.log(`\n✅ [NOTIFY CLIENT] Booking ACCEPTED for ${clientEmail} at ${salonName}`);
+
+    try {
+      const transporter = await this.getTransporter();
+      const from = process.env.SMTP_FROM || 'SalonBook <no-reply@salonbook.com>';
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family:sans-serif; background:#f7fafc; padding:24px;">
+          <div style="max-width:600px; background:#fff; border-radius:12px; padding:24px; margin:0 auto; border:1px solid #e2e8f0;">
+            <h2 style="color:#10b981; margin-top:0;">🎉 Your Booking Has Been Accepted!</h2>
+            <p>Hi ${clientName},</p>
+            <p>Great news! <strong>${salonName}</strong> has accepted your booking for <strong>${serviceName}</strong> on <strong>${dateStr} at ${timeStr}</strong>.</p>
+            <p>We look forward to seeing you!</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      await transporter.sendMail({
+        from,
+        to: clientEmail,
+        subject: `Booking Accepted! ${serviceName} at ${salonName} on ${dateStr}`,
+        html: htmlContent
+      });
+    } catch (err) {
+      console.error('❌ Failed to send booking accepted email:', err);
+    }
+
+    if (clientPhone) {
+      await this.sendSms(clientPhone, `Hi ${clientName}, your booking for ${serviceName} at ${salonName} on ${dateStr} at ${timeStr} has been ACCEPTED by the salon!`);
+    }
+  }
+
+  /**
+   * Sends booking declined notification to client.
+   */
+  async sendBookingDeclined(appointment: any): Promise<void> {
+    const clientEmail = appointment.client?.email || 'test@example.com';
+    const clientPhone = appointment.client?.phone || appointment.paymentDetails || '';
+    const clientName  = appointment.client?.name || 'Valued Client';
+    const serviceName = appointment.service?.name || 'Salon Service';
+    const salonName   = appointment.salon?.name || 'Salon';
+    
+    const dateStr = new Date(appointment.date).toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+
+    console.log(`\n❌ [NOTIFY CLIENT] Booking DECLINED for ${clientEmail} at ${salonName}`);
+
+    try {
+      const transporter = await this.getTransporter();
+      const from = process.env.SMTP_FROM || 'SalonBook <no-reply@salonbook.com>';
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family:sans-serif; background:#f7fafc; padding:24px;">
+          <div style="max-width:600px; background:#fff; border-radius:12px; padding:24px; margin:0 auto; border:1px solid #e2e8f0;">
+            <h2 style="color:#ef4444; margin-top:0;">Booking Request Declined</h2>
+            <p>Hi ${clientName},</p>
+            <p>Unfortunately, <strong>${salonName}</strong> was unable to accept your booking request for <strong>${serviceName}</strong> on <strong>${dateStr}</strong>.</p>
+            <p>You can try selecting a different date or time slot on our platform.</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      await transporter.sendMail({
+        from,
+        to: clientEmail,
+        subject: `Booking Request Declined: ${serviceName} at ${salonName}`,
+        html: htmlContent
+      });
+    } catch (err) {
+      console.error('❌ Failed to send booking declined email:', err);
+    }
+
+    if (clientPhone) {
+      await this.sendSms(clientPhone, `Hi ${clientName}, your booking request for ${serviceName} at ${salonName} on ${dateStr} was declined by the salon.`);
+    }
+  }
 }
+
 
 export const notificationService = new NotificationService();

@@ -19,6 +19,7 @@ interface AuthContextType {
     isLoading: boolean;
     roles: string[];
     isSalonOwner: boolean;
+    isAdmin: boolean;
     isEmailVerified: boolean;
 }
 
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [roles, setRoles] = useState<string[]>([]);
     const [isSalonOwner, setIsSalonOwner] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const [isSyncing, setIsSyncing] = useState(true);
     const [isEmailVerified, setIsEmailVerified] = useState(true);
 
@@ -71,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             const lowerRole = rawRole.toLowerCase();
                             setRoles([rawRole, upperRole, lowerRole]);
                             setIsSalonOwner(upperRole === 'SALON_OWNER');
+                            setIsAdmin(upperRole === 'ADMIN');
                         }
                     }
                 } catch (error) {
@@ -82,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(null);
                 setRoles([]);
                 setIsSalonOwner(false);
+                setIsAdmin(false);
                 setIsSyncing(false);
             }
         };
@@ -99,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoggedIn: isAuthenticated, login, logout, isLoading: isLoading || isSyncing, roles, isSalonOwner, isEmailVerified }}>
+        <AuthContext.Provider value={{ user, isLoggedIn: isAuthenticated, login, logout, isLoading: isLoading || isSyncing, roles, isSalonOwner, isAdmin, isEmailVerified }}>
             {children}
         </AuthContext.Provider>
     );

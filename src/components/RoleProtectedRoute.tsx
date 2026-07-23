@@ -9,7 +9,7 @@ interface RoleProtectedRouteProps {
 }
 
 export default function RoleProtectedRoute({ children, role }: RoleProtectedRouteProps) {
-    const { isLoggedIn, isLoading, login, roles, isSalonOwner } = useAuth();
+    const { isLoggedIn, isLoading, login, roles, isSalonOwner, isAdmin } = useAuth();
 
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -23,7 +23,12 @@ export default function RoleProtectedRoute({ children, role }: RoleProtectedRout
     }
 
     // User is logged in but doesn't have the required role
-    const hasAccess = role === 'salon_owner' ? isSalonOwner : roles.includes(role);
+    const normalizedRole = role.toLowerCase();
+    const hasAccess = normalizedRole === 'salon_owner'
+        ? isSalonOwner
+        : normalizedRole === 'admin'
+        ? isAdmin
+        : roles.includes(role);
 
     if (!hasAccess) {
         return (
@@ -41,8 +46,8 @@ export default function RoleProtectedRoute({ children, role }: RoleProtectedRout
                 <div style={{ fontSize: '4rem' }}>🔒</div>
                 <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: 0 }}>Access Denied</h1>
                 <p style={{ color: '#666', maxWidth: '400px', margin: 0 }}>
-                    This page is only available to <strong>salon owners</strong>.
-                    If you manage a salon and believe this is a mistake, please contact support.
+                    This page requires <strong>{role.replace('_', ' ').toUpperCase()}</strong> access permissions.
+                    If you believe this is an error, please contact support.
                 </p>
                 <Link
                     to="/"

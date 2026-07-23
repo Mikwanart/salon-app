@@ -102,10 +102,11 @@ export default function ForSalons() {
                                 <>
                                     {!isLoggedIn ? (
                                         <button onClick={() => login()} className="btn btn-primary">Get Started Free</button>
-                                    ) : isSalonOwner ? (
-                                        <Link to="/dashboard" className="btn btn-primary">Go to Dashboard</Link>
                                     ) : (
-                                        <button onClick={() => setIsRegistering(true)} className="btn btn-primary">Create Your Salon</button>
+                                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                            <button onClick={() => setIsRegistering(true)} className="btn btn-primary">Create Your Salon</button>
+                                            {isSalonOwner && <Link to="/dashboard" className="btn btn-outline">Go to Dashboard</Link>}
+                                        </div>
                                     )}
                                     <a href="#features" className="btn btn-outline">See Features →</a>
                                 </>

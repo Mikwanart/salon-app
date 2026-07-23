@@ -2,15 +2,44 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { autoSeedSalons } from '../lib/autoSeed';
 
+/**
+ * Robust helper to retrieve user from DB via auth0Id with automatic email fallback
+ */
+export const getUserFromReq = async (req: Request) => {
+  const auth0Id = req.auth?.payload.sub;
+  if (!auth0Id) return null;
+
+  let user = await prisma.user.findUnique({ where: { auth0Id } });
+  if (!user) {
+    // Attempt fallback lookup by email claim if present in token payload
+    const email = (req.auth?.payload.email || req.auth?.payload['https://salon-api/email']) as string | undefined;
+    if (email) {
+      user = await prisma.user.findUnique({ where: { email } });
+      if (user) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { auth0Id }
+        });
+      }
+    }
+  }
+  return user;
+};
+
 export const getSalons = async (req: Request, res: Response) => {
   try {
     const { search } = req.query;
 
-    const whereClause: any = {};
+    const whereClause: any = { status: 'APPROVED' };
     if (search) {
-      whereClause.OR = [
-        { name: { contains: String(search), mode: 'insensitive' } },
-        { city: { contains: String(search), mode: 'insensitive' } },
+      whereClause.AND = [
+        { status: 'APPROVED' },
+        {
+          OR: [
+            { name: { contains: String(search), mode: 'insensitive' } },
+            { city: { contains: String(search), mode: 'insensitive' } },
+          ],
+        },
       ];
     }
 
@@ -94,11 +123,8 @@ export const getSalonServices = async (req: Request, res: Response) => {
  */
 export const getSalonOwnerSalon = async (req: Request, res: Response): Promise<void> => {
   try {
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
-    if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+    const user = await getUserFromReq(req);
+    if (!user) { res.status(404).json({ error: 'User profile not found. Please log in again.' }); return; }
 
     const salon = await prisma.salon.findFirst({
       where: { ownerId: user.id },
@@ -106,6 +132,7 @@ export const getSalonOwnerSalon = async (req: Request, res: Response): Promise<v
         services: { where: { isActive: true } },
         stylists: { where: { isActive: true } },
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!salon) {
@@ -121,16 +148,38 @@ export const getSalonOwnerSalon = async (req: Request, res: Response): Promise<v
 };
 
 /**
+ * Returns all salons owned by the currently logged-in user.
+ * Enables multi-salon owners to switch between their salons.
+ */
+export const getSalonOwnerSalons = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await getUserFromReq(req);
+    if (!user) { res.status(404).json({ error: 'User profile not found. Please log in again.' }); return; }
+
+    const salons = await prisma.salon.findMany({
+      where: { ownerId: user.id },
+      include: {
+        services: { where: { isActive: true } },
+        stylists: { where: { isActive: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(salons);
+  } catch (error) {
+    console.error('Error fetching owner salons:', error);
+    res.status(500).json({ error: 'Failed to fetch owner salons' });
+  }
+};
+
+/**
  * Returns all appointments booked AT the owner's salon(s) — with full customer,
  * service, and stylist details. This is the correct data source for the Dashboard.
  */
 export const getSalonOwnerAppointments = async (req: Request, res: Response): Promise<void> => {
   try {
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
-    if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+    const user = await getUserFromReq(req);
+    if (!user) { res.status(404).json({ error: 'User profile not found' }); return; }
 
     // Find all salons owned by this user
     const salons = await prisma.salon.findMany({
@@ -176,16 +225,16 @@ export const getSalonOwnerAppointments = async (req: Request, res: Response): Pr
  */
 export const updateSalonOwnerSalon = async (req: Request, res: Response): Promise<void> => {
   try {
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    const user = await getUserFromReq(req);
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-    const salon = await prisma.salon.findFirst({ where: { ownerId: user.id } });
-    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
+    const { salonId, name, description, address, city, state, zipCode, phone, coverImage } = req.body;
+    const targetId = salonId || req.query.salonId;
+    const salon = targetId
+      ? await prisma.salon.findFirst({ where: { id: String(targetId), ownerId: user.id } })
+      : await prisma.salon.findFirst({ where: { ownerId: user.id } });
 
-    const { name, description, address, city, state, zipCode, phone, coverImage } = req.body;
+    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
 
     const updated = await prisma.salon.update({
       where: { id: salon.id },
@@ -204,16 +253,16 @@ export const updateSalonOwnerSalon = async (req: Request, res: Response): Promis
  */
 export const createSalonService = async (req: Request, res: Response): Promise<void> => {
   try {
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    const user = await getUserFromReq(req);
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-    const salon = await prisma.salon.findFirst({ where: { ownerId: user.id } });
-    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
+    const { salonId, name, category, description, price, duration } = req.body;
+    const targetId = salonId || req.query.salonId;
+    const salon = targetId
+      ? await prisma.salon.findFirst({ where: { id: String(targetId), ownerId: user.id } })
+      : await prisma.salon.findFirst({ where: { ownerId: user.id } });
 
-    const { name, category, description, price, duration } = req.body;
+    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
 
     const service = await prisma.service.create({
       data: { name, category, description, price, duration, salonId: salon.id },
@@ -232,17 +281,11 @@ export const createSalonService = async (req: Request, res: Response): Promise<v
 export const updateSalonService = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    const user = await getUserFromReq(req);
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-    const salon = await prisma.salon.findFirst({ where: { ownerId: user.id } });
-    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
-
-    const service = await prisma.service.findUnique({ where: { id: String(id) } });
-    if (!service || service.salonId !== salon.id) {
+    const service = await prisma.service.findUnique({ where: { id: String(id) }, include: { salon: true } });
+    if (!service || service.salon.ownerId !== user.id) {
       res.status(403).json({ error: 'Unauthorized to edit this service' }); return;
     }
 
@@ -266,17 +309,11 @@ export const updateSalonService = async (req: Request, res: Response): Promise<v
 export const deleteSalonService = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    const user = await getUserFromReq(req);
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-    const salon = await prisma.salon.findFirst({ where: { ownerId: user.id } });
-    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
-
-    const service = await prisma.service.findUnique({ where: { id: String(id) } });
-    if (!service || service.salonId !== salon.id) {
+    const service = await prisma.service.findUnique({ where: { id: String(id) }, include: { salon: true } });
+    if (!service || service.salon.ownerId !== user.id) {
       res.status(403).json({ error: 'Unauthorized to delete this service' }); return;
     }
 
@@ -297,16 +334,16 @@ export const deleteSalonService = async (req: Request, res: Response): Promise<v
  */
 export const createSalonStylist = async (req: Request, res: Response): Promise<void> => {
   try {
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    const user = await getUserFromReq(req);
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-    const salon = await prisma.salon.findFirst({ where: { ownerId: user.id } });
-    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
+    const { salonId, name, role, image, specialties } = req.body;
+    const targetId = salonId || req.query.salonId;
+    const salon = targetId
+      ? await prisma.salon.findFirst({ where: { id: String(targetId), ownerId: user.id } })
+      : await prisma.salon.findFirst({ where: { ownerId: user.id } });
 
-    const { name, role, image, specialties } = req.body;
+    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
 
     const stylist = await prisma.stylist.create({
       data: { name, role, image, specialties: specialties || [], salonId: salon.id },
@@ -325,17 +362,11 @@ export const createSalonStylist = async (req: Request, res: Response): Promise<v
 export const updateSalonStylist = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    const user = await getUserFromReq(req);
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-    const salon = await prisma.salon.findFirst({ where: { ownerId: user.id } });
-    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
-
-    const stylist = await prisma.stylist.findUnique({ where: { id: String(id) } });
-    if (!stylist || stylist.salonId !== salon.id) {
+    const stylist = await prisma.stylist.findUnique({ where: { id: String(id) }, include: { salon: true } });
+    if (!stylist || stylist.salon.ownerId !== user.id) {
       res.status(403).json({ error: 'Unauthorized to edit this stylist' }); return;
     }
 
@@ -359,17 +390,11 @@ export const updateSalonStylist = async (req: Request, res: Response): Promise<v
 export const deleteSalonStylist = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { res.status(401).json({ error: 'Unauthorized' }); return; }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    const user = await getUserFromReq(req);
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-    const salon = await prisma.salon.findFirst({ where: { ownerId: user.id } });
-    if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
-
-    const stylist = await prisma.stylist.findUnique({ where: { id: String(id) } });
-    if (!stylist || stylist.salonId !== salon.id) {
+    const stylist = await prisma.stylist.findUnique({ where: { id: String(id) }, include: { salon: true } });
+    if (!stylist || stylist.salon.ownerId !== user.id) {
       res.status(403).json({ error: 'Unauthorized to delete this stylist' }); return;
     }
 
@@ -387,26 +412,22 @@ export const deleteSalonStylist = async (req: Request, res: Response): Promise<v
 
 export const registerSalon = async (req: Request, res: Response): Promise<void> => {
   try {
-    const auth0Id = req.auth?.payload.sub;
-    if (!auth0Id) { 
-      console.log('Register failed: No auth0Id');
-      res.status(401).json({ error: 'Unauthorized' }); 
-      return; 
-    }
-
-    const user = await prisma.user.findUnique({ where: { auth0Id } });
+    const user = await getUserFromReq(req);
     if (!user) { 
-      console.log('Register failed: User not found for auth0Id', auth0Id);
-      res.status(404).json({ error: 'User not found' }); 
+      console.log('Register failed: User profile not found');
+      res.status(404).json({ error: 'User profile not found. Please log in again.' }); 
       return; 
     }
 
     const { name, address, city, state, phone, email } = req.body;
     if (!name || !address || !city || !state) {
       console.log('Register failed: Missing required fields', req.body);
-      res.status(400).json({ error: 'Missing required fields' });
+      res.status(400).json({ error: 'Missing required fields: name, address, city, and state are required.' });
       return;
     }
+
+    // Determine initial salon status based on user role
+    const initialStatus = user.role === 'SALON_OWNER' || user.role === 'ADMIN' ? 'APPROVED' : 'PENDING';
 
     const salon = await prisma.salon.create({
       data: {
@@ -416,11 +437,12 @@ export const registerSalon = async (req: Request, res: Response): Promise<void> 
         state,
         phone,
         email,
+        status: initialStatus,
         ownerId: user.id
       }
     });
 
-    if (user.role !== 'SALON_OWNER') {
+    if (user.role !== 'SALON_OWNER' && user.role !== 'ADMIN') {
       await prisma.user.update({
         where: { id: user.id },
         data: { role: 'SALON_OWNER' }
