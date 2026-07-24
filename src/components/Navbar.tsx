@@ -87,6 +87,73 @@ export default function Navbar() {
         }
     };
 
+    const renderNotificationBell = () => (
+        <div className="bell-wrapper" ref={bellRef}>
+            <button
+                className="bell-btn"
+                onClick={handleBellOpen}
+                aria-label="Notifications"
+            >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                    <span className="bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                )}
+            </button>
+
+            {bellOpen && (
+                <div className="bell-dropdown">
+                    <div className="bell-dropdown-header">
+                        <span>Notifications</span>
+                        <div className="bell-header-actions">
+                            {notifications.length > 0 && (
+                                <>
+                                    <button onClick={markAllRead} title="Mark all read"><CheckCheck size={15} /></button>
+                                    <button onClick={clearAll} title="Clear all"><X size={15} /></button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    <div className="bell-dropdown-list">
+                        {notifications.length === 0 ? (
+                            <div className="bell-empty">
+                                <Bell size={28} />
+                                <p>No notifications yet</p>
+                            </div>
+                        ) : (
+                            notifications.slice(0, 10).map(n => (
+                                <div key={n.id} className={`bell-notif ${n.read ? '' : 'unread'}`}>
+                                    <span className="notif-type-icon">{typeIcon[n.type] || 'ℹ️'}</span>
+                                    <div className="notif-body">
+                                        <p className="notif-msg">{n.message}</p>
+                                        <span className="notif-time">{formatTime(n.timestamp)}</span>
+                                        {n.actions && n.actions.length > 0 && (
+                                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                <button 
+                                                    className="btn btn-sm" 
+                                                    style={{ backgroundColor: '#10b981', color: '#fff', padding: '4px 10px', fontSize: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                                    onClick={() => handleNotificationAction(n, 'CONFIRMED')}
+                                                >
+                                                    Accept
+                                                </button>
+                                                <button 
+                                                    className="btn btn-sm" 
+                                                    style={{ backgroundColor: '#ef4444', color: '#fff', padding: '4px 10px', fontSize: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                                    onClick={() => handleNotificationAction(n, 'CANCELLED')}
+                                                >
+                                                    Decline
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <nav className="navbar">
             <div className="navbar-inner container">
@@ -130,73 +197,7 @@ export default function Navbar() {
 
                 {/* DESKTOP NAVIGATION ACTIONS */}
                 <div className="navbar-actions desktop-only-actions">
-                    {/* Notification Bell */}
-                    {isLoggedIn && (
-                        <div className="bell-wrapper" ref={bellRef}>
-                            <button
-                                className="bell-btn"
-                                onClick={handleBellOpen}
-                                aria-label="Notifications"
-                            >
-                                <Bell size={20} />
-                                {unreadCount > 0 && (
-                                    <span className="bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-                                )}
-                            </button>
-
-                            {bellOpen && (
-                                <div className="bell-dropdown">
-                                    <div className="bell-dropdown-header">
-                                        <span>Notifications</span>
-                                        <div className="bell-header-actions">
-                                            {notifications.length > 0 && (
-                                                <>
-                                                    <button onClick={markAllRead} title="Mark all read"><CheckCheck size={15} /></button>
-                                                    <button onClick={clearAll} title="Clear all"><X size={15} /></button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="bell-dropdown-list">
-                                        {notifications.length === 0 ? (
-                                            <div className="bell-empty">
-                                                <Bell size={28} />
-                                                <p>No notifications yet</p>
-                                            </div>
-                                        ) : (
-                                            notifications.slice(0, 10).map(n => (
-                                                <div key={n.id} className={`bell-notif ${n.read ? '' : 'unread'}`}>
-                                                    <span className="notif-type-icon">{typeIcon[n.type] || 'ℹ️'}</span>
-                                                    <div className="notif-body">
-                                                        <p className="notif-msg">{n.message}</p>
-                                                        <span className="notif-time">{formatTime(n.timestamp)}</span>
-                                                        {n.actions && n.actions.length > 0 && (
-                                                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                                                <button 
-                                                                    className="btn btn-sm" 
-                                                                    style={{ backgroundColor: '#10b981', color: '#fff', padding: '4px 10px', fontSize: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                                                                    onClick={() => handleNotificationAction(n, 'CONFIRMED')}
-                                                                >
-                                                                    Accept
-                                                                </button>
-                                                                <button 
-                                                                    className="btn btn-sm" 
-                                                                    style={{ backgroundColor: '#ef4444', color: '#fff', padding: '4px 10px', fontSize: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                                                                    onClick={() => handleNotificationAction(n, 'CANCELLED')}
-                                                                >
-                                                                    Decline
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    {isLoggedIn && renderNotificationBell()}
 
                     <button
                         className="theme-toggle"
@@ -241,16 +242,19 @@ export default function Navbar() {
                     )}
                 </div>
 
-                {/* TRIPLE DASHED HAMBURGER BUTTON (MOBILE ONLY) */}
-                <button
-                    className={`hamburger ${menuOpen ? 'open' : ''}`}
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    aria-label="Toggle menu"
-                >
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+                {/* MOBILE CONTROLS & TRIPLE DASHED HAMBURGER BUTTON (MOBILE ONLY) */}
+                <div className="mobile-header-right">
+                    {isLoggedIn && renderNotificationBell()}
+                    <button
+                        className={`hamburger ${menuOpen ? 'open' : ''}`}
+                        onClick={() => setMenuOpen(!menuOpen)}
+                        aria-label="Toggle menu"
+                    >
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
             </div>
 
             {/* FRESHA-STYLE FULLSCREEN MOBILE MENU OVERLAY (MOUNTED TO BODY VIA PORTAL) */}
@@ -273,15 +277,30 @@ export default function Navbar() {
                                     <ChevronRight size={20} className="fresha-chevron" />
                                 </button>
                             ) : (
-                                <Link to="/profile" className="fresha-row primary-text" onClick={() => setMenuOpen(false)}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div className="nav-avatar" style={{ width: '28px', height: '28px', fontSize: '0.75rem' }}>
-                                            {user?.avatar ? <img src={user.avatar} alt="" /> : <User size={16} />}
+                                <>
+                                    <Link to="/profile" className="fresha-row primary-text" onClick={() => setMenuOpen(false)}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div className="nav-avatar" style={{ width: '28px', height: '28px', fontSize: '0.75rem' }}>
+                                                {user?.avatar ? <img src={user.avatar} alt="" /> : <User size={16} />}
+                                            </div>
+                                            <span>My Profile</span>
                                         </div>
-                                        <span>My Profile</span>
-                                    </div>
-                                    <ChevronRight size={20} className="fresha-chevron" />
-                                </Link>
+                                        <ChevronRight size={20} className="fresha-chevron" />
+                                    </Link>
+
+                                    <button className="fresha-row" onClick={() => { setMenuOpen(false); handleBellOpen(); }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <Bell size={18} />
+                                            <span>Notifications</span>
+                                            {unreadCount > 0 && (
+                                                <span className="bell-badge" style={{ position: 'relative', top: 0, right: 0 }}>
+                                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                                </span>
+                                            )}
+                                        </span>
+                                        <ChevronRight size={20} className="fresha-chevron" />
+                                    </button>
+                                </>
                             )}
 
                             <Link to="/services" className="fresha-row" onClick={() => setMenuOpen(false)}>

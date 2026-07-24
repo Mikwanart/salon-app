@@ -204,6 +204,10 @@
     transform: rotate(-45deg) translate(5px, -5px);
 }
 
+.mobile-header-right {
+    display: none;
+}
+
 /* =========================================================
    FRESHA-STYLE MOBILE MENU OVERLAY
    ========================================================= */
@@ -359,6 +363,12 @@
     .desktop-only-links,
     .desktop-only-actions {
         display: none !important;
+    }
+
+    .mobile-header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     .hamburger {
