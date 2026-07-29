@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { services as allServices, stylists, timeSlots, mapApiSalonToFrontendSalon, type Salon } from '../data';
+import { services as allServices, stylists, timeSlots, mapApiSalonToFrontendSalon, salons as fallbackSalons, type Salon } from '../data';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNotifications } from '../context/NotificationContext';
-import { createAppointment, fetchSalonById, verifyPaymentStatus, fetchBookedSlots } from '../lib/api';
+import { createAppointment, fetchSalonById, fetchSalons, verifyPaymentStatus, fetchBookedSlots } from '../lib/api';
 
 import SalonMap from '../components/SalonMap';
 import { CheckCircle, Smartphone, CreditCard, Lock, RefreshCw, Printer, AlertCircle } from 'lucide-react';
@@ -58,6 +58,7 @@ export default function Booking() {
     const preselectedService = searchParams.get('service') || '';
     
     const [salon, setSalon] = useState<Salon | null>(null);
+    const [allSalonsList, setAllSalonsList] = useState<Salon[]>([]);
     const [isLoadingSalon, setIsLoadingSalon] = useState(true);
 
     const { showToast } = useToast();
@@ -241,24 +242,83 @@ export default function Booking() {
     };
 
     useEffect(() => {
-        const loadSalon = async () => {
-            if (!salonId) {
-                setIsLoadingSalon(false);
-                return;
-            }
+        const loadSalonData = async () => {
+            setIsLoadingSalon(true);
             try {
-                const data = await fetchSalonById(salonId);
-                setSalon(mapApiSalonToFrontendSalon(data));
+                let mappedSalons: Salon[] = [];
+                try {
+                    const apiSalonsData = await fetchSalons();
+                    if (Array.isArray(apiSalonsData) && apiSalonsData.length > 0) {
+                        mappedSalons = apiSalonsData.map((s: any) => mapApiSalonToFrontendSalon(s, null));
+                    } else {
+                        mappedSalons = fallbackSalons;
+                    }
+                } catch {
+                    mappedSalons = fallbackSalons;
+                }
+                setAllSalonsList(mappedSalons);
+
+                if (salonId) {
+                    const data = await fetchSalonById(salonId);
+                    setSalon(mapApiSalonToFrontendSalon(data));
+                } else if (mappedSalons.length > 0) {
+                    let targetSalon = mappedSalons[0];
+                    if (preselectedService) {
+                        const preselectedLower = preselectedService.toLowerCase();
+                        const found = mappedSalons.find(sl =>
+                            sl.services.some(sv =>
+                                sv.id === preselectedService ||
+                                sv.name.toLowerCase() === preselectedLower
+                            )
+                        );
+                        if (found) targetSalon = found;
+                    }
+                    setSalon(targetSalon);
+                }
             } catch (err) {
-                console.error("Failed to fetch salon:", err);
+                console.error("Failed to fetch salon details:", err);
+                if (fallbackSalons.length > 0) {
+                    setSalon(fallbackSalons[0]);
+                }
             } finally {
                 setIsLoadingSalon(false);
             }
         };
-        loadSalon();
-    }, [salonId]);
+        loadSalonData();
+    }, [salonId, preselectedService]);
 
     const availableServices = salon?.services.length ? salon.services : allServices.slice(0, 4);
+
+    // Auto-resolve preselectedService (whether ID or Name string) to matching service database ID
+    useEffect(() => {
+        if (!salon) return;
+        const available = salon.services.length ? salon.services : allServices.slice(0, 4);
+
+        if (preselectedService) {
+            const preselectedLower = preselectedService.toLowerCase();
+            const matched = available.find(
+                (s) => s.id === preselectedService || s.name.toLowerCase() === preselectedLower
+            );
+            if (matched) {
+                setSelectedService(matched.id);
+                return;
+            }
+        }
+
+        if (selectedService) {
+            const matched = available.find(
+                (s) => s.id === selectedService || s.name.toLowerCase() === selectedService.toLowerCase()
+            );
+            if (matched) {
+                setSelectedService(matched.id);
+                return;
+            }
+        }
+
+        if (available.length > 0) {
+            setSelectedService(available[0].id);
+        }
+    }, [salon, preselectedService]);
 
     // Real-time slot availability: fetch booked slots from the DB for the selected salon + date
     const [bookedSlots, setBookedSlots] = useState<string[]>([]);
@@ -585,7 +645,7 @@ export default function Booking() {
                         
                         <div className="invoice-row invoice-total">
                             <span>Amount Charged</span>
-                            <span>${formattedPrice}</span>
+                            <span>GH₵{formattedPrice}</span>
                         </div>
                     </div>
 
@@ -616,8 +676,9 @@ export default function Booking() {
     if (isLoadingSalon) {
         return (
             <main className="booking-page">
-                <div className="container section" style={{ textAlign: 'center' }}>
-                    <h2>Loading salon details...</h2>
+                <div className="global-loading-wrap">
+                    <div className="global-spinner"></div>
+                    <span className="global-loading-text">Loading salon details...</span>
                 </div>
             </main>
         );
@@ -641,6 +702,34 @@ export default function Booking() {
                 <div className="container">
                     <h1>Book an Appointment</h1>
                     <p>at <strong>{salon.name}</strong></p>
+                    {allSalonsList.length > 1 && (
+                        <div style={{ marginTop: '12px' }}>
+                            <label style={{ fontSize: '0.85rem', opacity: 0.9, marginRight: '8px' }}>Salon Venue:</label>
+                            <select
+                                value={salon.id}
+                                onChange={(e) => {
+                                    const target = allSalonsList.find(s => s.id === e.target.value);
+                                    if (target) setSalon(target);
+                                }}
+                                style={{
+                                    padding: '6px 14px',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(255,255,255,0.3)',
+                                    background: 'rgba(0,0,0,0.25)',
+                                    color: '#fff',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {allSalonsList.map(s => (
+                                    <option key={s.id} value={s.id} style={{ color: '#000' }}>
+                                        {s.name} — {s.location}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -675,7 +764,7 @@ export default function Booking() {
                                                 <h4>{s.name}</h4>
                                                 <p>{s.duration} • {s.category}</p>
                                             </div>
-                                            <span className="option-price">${s.price}</span>
+                                            <span className="option-price">GH₵{s.price}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -802,7 +891,7 @@ export default function Booking() {
                                         </div>
                                         <div className="summary-row total">
                                             <span>Total</span>
-                                            <span>${availableServices.find((s) => s.id === selectedService)?.price || 0}</span>
+                                            <span>GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -815,7 +904,7 @@ export default function Booking() {
                                 <h3>Choose Payment Method</h3>
                                 <p className="payment-subtitle">
                                     Total: <strong className="payment-total-amount">
-                                        ${availableServices.find((s) => s.id === selectedService)?.price || 0}
+                                        GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}
                                     </strong>
                                 </p>
 
@@ -864,7 +953,7 @@ export default function Booking() {
                                         </div>
                                         <p className="payment-info-note">
                                             💡 You will receive a prompt on your phone to authorize the payment of
-                                            <strong> ${availableServices.find((s) => s.id === selectedService)?.price || 0}</strong>.
+                                            <strong> GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}</strong>.
                                         </p>
                                     </div>
                                 )}
@@ -942,7 +1031,7 @@ export default function Booking() {
                                             <span>💵 Cash on Arrival</span>
                                         </div>
                                         <div className="cash-info">
-                                            <p>Please bring <strong>${availableServices.find((s) => s.id === selectedService)?.price || 0}</strong> in cash to your appointment.</p>
+                                            <p>Please bring <strong>GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}</strong> in cash to your appointment.</p>
                                             <p>📍 <em>{salon.address}</em></p>
                                             <p>⏰ Your appointment is at <strong>{selectedTime}</strong> on <strong>{selectedDate}</strong>.</p>
                                         </div>
@@ -1020,7 +1109,7 @@ export default function Booking() {
                                         
                                         <p style={{ fontSize: '0.75rem', color: '#666', marginBottom: '16px', lineHeight: '1.4' }}>
                                             Please check your phone, enter your PIN, and approve the charge of 
-                                            <strong> ${availableServices.find((s) => s.id === selectedService)?.price || 0}</strong>.
+                                            <strong> GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}</strong>.
                                         </p>
 
                                         <div style={{ background: 'var(--primary-light)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>

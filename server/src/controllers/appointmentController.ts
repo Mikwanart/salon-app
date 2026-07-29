@@ -126,10 +126,10 @@ export const getMyAppointments = async (req: Request, res: Response): Promise<vo
         where: { clientId: user.id },
         include: {
           salon: {
-            select: { name: true, address: true, city: true }
+            select: { id: true, name: true, address: true, city: true }
           },
           service: {
-            select: { name: true, price: true, duration: true }
+            select: { id: true, name: true, price: true, duration: true, image: true }
           },
           stylist: {
             select: { name: true, role: true }

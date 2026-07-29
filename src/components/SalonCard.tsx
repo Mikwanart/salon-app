@@ -20,7 +20,7 @@ export default function SalonCard({ salon }: Props) {
     const [isFav, setIsFav] = useState(() => getFavourites().includes(salon.id));
 
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-        e.currentTarget.src = 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=60&w=400';
+        e.currentTarget.src = 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=60&w=400';
     };
 
     const toggleFavourite = (e: React.MouseEvent) => {

@@ -4,14 +4,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useToast } from '../context/ToastContext';
-import { fetchMyAppointments, updateAppointment } from '../lib/api';
-import { timeSlots } from '../data';
+import { fetchMyAppointments, updateAppointment, fetchSalons } from '../lib/api';
+import { mapApiSalonToFrontendSalon } from '../data';
+import { Calendar, History, User, LogOut, Clock, Star, Scissors } from 'lucide-react';
 import './Profile.css';
 
 interface Booking {
     id: string;
     salonId?: string;
     salonName: string;
+    salonImage?: string;
     serviceName: string;
     stylistName: string;
     date: string;
@@ -19,25 +21,34 @@ interface Booking {
     price: number;
     paymentMethod?: string;
     paymentStatus?: string;
-    status?: 'confirmed' | 'cancelled' | 'rescheduled' | 'completed';
+    status?: 'confirmed' | 'cancelled' | 'rescheduled' | 'completed' | 'pending';
+    fallbackImage?: string;
+}
+
+interface RecommendedSalon {
+    id: string;
+    name: string;
+    image: string;
+    rating: number;
+    description: string;
+    city: string;
+    location: string;
 }
 
 export default function Profile() {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const navigate = useNavigate();
     const { addNotification, syncWithAppointments } = useNotifications();
     const { getAccessTokenSilently } = useAuth0();
     const { showToast } = useToast();
     
     const [bookings, setBookings] = useState<Booking[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [recommendedSalons, setRecommendedSalons] = useState<RecommendedSalon[]>([]);
+    const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
+    const [isLoadingSalons, setIsLoadingSalons] = useState(true);
+    const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-    // Reschedule modal state
-    const [rescheduleId, setRescheduleId] = useState<string | null>(null);
-    const [newDate, setNewDate] = useState('');
-    const [newTime, setNewTime] = useState('');
-
-    const mapBackendStatusToFrontend = (status: string): 'confirmed' | 'cancelled' | 'rescheduled' | 'completed' => {
+    const mapBackendStatusToFrontend = (status: string): Booking['status'] => {
         switch (status) {
             case 'CANCELLED':
                 return 'cancelled';
@@ -45,30 +56,48 @@ export default function Profile() {
                 return 'rescheduled';
             case 'COMPLETED':
                 return 'completed';
-            case 'CONFIRMED':
             case 'PENDING':
+                return 'pending';
+            case 'CONFIRMED':
             default:
                 return 'confirmed';
         }
     };
 
-    const loadBookings = async () => {
-        setIsLoading(true);
+    const loadAppointments = async (token: string) => {
+        setIsLoadingAppointments(true);
         try {
-            const token = await getAccessTokenSilently();
             const data = await fetchMyAppointments(token);
             syncWithAppointments(data, false);
             
-            const mappedBookings: Booking[] = data.map((b: any) => {
+            const sortedData = [...data].sort((a: any, b: any) => {
+                const timeA = new Date(a.createdAt || a.date).getTime();
+                const timeB = new Date(b.createdAt || b.date).getTime();
+                return timeB - timeA;
+            });
+
+            const mappedBookings: Booking[] = sortedData.map((b: any) => {
                 const dateObj = new Date(b.date);
-                const dateStr = dateObj.toISOString().split('T')[0];
+                const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                
+                let serviceImage = b.service?.image;
+                let serviceName = b.service?.name || 'Unknown Service';
+                let salonFallbackImage = b.salon?.image || b.salon?.coverImage;
+                
+                if (b.salon && !salonFallbackImage) {
+                    const frontendSalon = mapApiSalonToFrontendSalon(b.salon);
+                    salonFallbackImage = frontendSalon.image;
+                }
+
+                const finalImage = serviceImage || salonFallbackImage || 'https://via.placeholder.com/150';
 
                 return {
                     id: b.id,
                     salonId: b.salonId,
                     salonName: b.salon?.name || 'Unknown Salon',
-                    serviceName: b.service?.name || 'Unknown Service',
+                    salonImage: finalImage,
+                    serviceName: serviceName,
                     stylistName: b.stylist?.name || 'Any',
                     date: dateStr,
                     time: timeStr,
@@ -76,28 +105,54 @@ export default function Profile() {
                     status: mapBackendStatusToFrontend(b.status),
                     paymentMethod: b.paymentMethod ? b.paymentMethod.toLowerCase() : 'cash',
                     paymentStatus: b.paymentStatus || 'PENDING',
+                    fallbackImage: salonFallbackImage || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=400',
                 };
             });
             
             setBookings(mappedBookings);
         } catch (err) {
             console.error('Failed to load appointments:', err);
-            showToast('Failed to load appointments.', 'error');
         } finally {
-            setIsLoading(false);
+            setIsLoadingAppointments(false);
+        }
+    };
+
+    const loadSalons = async () => {
+        setIsLoadingSalons(true);
+        try {
+            const salonsResponse = await fetchSalons();
+            const mappedSalons = salonsResponse.slice(0, 4).map((s: any) => mapApiSalonToFrontendSalon(s));
+            setRecommendedSalons(mappedSalons);
+        } catch (err) {
+            console.error('Failed to load salons:', err);
+        } finally {
+            setIsLoadingSalons(false);
+        }
+    };
+
+    const loadData = async () => {
+        try {
+            const token = await getAccessTokenSilently();
+            loadAppointments(token);
+            loadSalons();
+        } catch (err) {
+            console.error('Failed to load data:', err);
+            showToast('Failed to load dashboard data.', 'error');
+            setIsLoadingAppointments(false);
+            setIsLoadingSalons(false);
         }
     };
 
     useEffect(() => {
-        loadBookings();
+        loadData();
     }, [getAccessTokenSilently]);
 
     const handleCancel = async (id: string) => {
+        setCancellingId(id);
         try {
             const token = await getAccessTokenSilently();
             await updateAppointment(id, { status: 'CANCELLED' }, token);
             
-            // Check if it was prepaid to show refund message
             const booking = bookings.find(b => b.id === id);
             const isPrepaid = booking && booking.paymentStatus === 'PAID' && (booking.paymentMethod === 'momo' || booking.paymentMethod === 'card');
             
@@ -112,200 +167,163 @@ export default function Profile() {
             }
             
             if (isPrepaid) {
-                showToast(`Booking cancelled. A refund of $${booking.price} has been sent to your wallet/card.`, 'success');
+                showToast(`Booking cancelled. A refund of GH₵${booking?.price} has been sent.`, 'success');
             } else {
                 showToast('Booking cancelled successfully.', 'success');
             }
         } catch (err) {
             console.error('Failed to cancel booking:', err);
             showToast('Failed to cancel booking. Please try again.', 'error');
+        } finally {
+            setCancellingId(null);
         }
     };
 
-    const handleBookAgain = (booking: Booking) => {
-        const params = new URLSearchParams();
-        if (booking.salonId) params.set('salon', booking.salonId);
-        navigate(`/booking?${params.toString()}`);
-    };
-
-    const openReschedule = (id: string) => {
-        const b = bookings.find(bk => bk.id === id);
-        setRescheduleId(id);
-        setNewDate(b?.date || '');
-        setNewTime(b?.time || '');
-    };
-
-    const handleReschedule = async () => {
-        if (!newDate || !newTime || !rescheduleId) return;
-        
-        try {
-            // Parse newTime string (e.g. "10:00 AM")
-            const timeParts = newTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-            let hours = 9;
-            let minutes = 0;
-            if (timeParts) {
-                hours = parseInt(timeParts[1], 10);
-                minutes = parseInt(timeParts[2], 10);
-                const period = timeParts[3].toUpperCase();
-                if (period === 'PM' && hours !== 12) hours += 12;
-                if (period === 'AM' && hours === 12) hours = 0;
-            }
-            
-            const combinedDate = new Date(`${newDate}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`);
-            
-            const token = await getAccessTokenSilently();
-            await updateAppointment(rescheduleId, { date: combinedDate.toISOString(), status: 'RESCHEDULED' }, token);
-            
-            setBookings(prev => prev.map(b =>
-                b.id === rescheduleId ? { ...b, date: newDate, time: newTime, status: 'rescheduled' as const } : b
-            ));
-            
-            const booking = bookings.find(b => b.id === rescheduleId);
-            if (booking) addNotification(`Booking at ${booking.salonName} rescheduled to ${newDate} at ${newTime}.`, 'success');
-            showToast('Booking rescheduled successfully.', 'success');
-            
-            setRescheduleId(null);
-            setNewDate('');
-            setNewTime('');
-        } catch (err) {
-            console.error('Failed to reschedule booking:', err);
-            showToast('Failed to reschedule booking. Please try again.', 'error');
-        }
-    };
-
-    const paymentLabel: Record<string, string> = {
-        momo: 'MTN MoMo', orange: 'Orange Money', card: 'Card', cash: 'Cash',
-    };
-
-    const reschedulingBooking = bookings.find(b => b.id === rescheduleId);
-
+    const upcomingBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'pending');
+    
     return (
-        <main className="profile-page">
-            {/* Hero */}
-            <section className="profile-hero">
-                <div className="container">
-                    <div className="profile-hero-inner">
-                        <div className="profile-avatar">
-                            {user?.name?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <h1>{user?.name}</h1>
-                            <p>{user?.email}</p>
-                        </div>
+        <div className="pd-layout">
+            {/* Sidebar */}
+            <aside className="pd-sidebar">
+                <Link to="/" className="pd-brand">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', background: 'var(--primary)', color: '#fff', borderRadius: '10px' }}>
+                        <Scissors size={20} style={{ transform: 'rotate(-45deg)' }} />
                     </div>
+                    <span>SalonBook</span>
+                </Link>
+                
+                <div className="pd-sidebar-content">
+                    <nav className="pd-nav">
+                        <a href="#" className="pd-nav-item active">
+                            <Calendar size={22} />
+                            <span>Upcoming Appointments</span>
+                        </a>
+                        <a href="#" className="pd-nav-item">
+                            <History size={22} />
+                            <span>Past Bookings</span>
+                        </a>
+                        <a href="#" className="pd-nav-item">
+                            <User size={22} />
+                            <span>Profile Settings</span>
+                        </a>
+                    </nav>
                 </div>
-            </section>
+                
+                <div className="pd-sidebar-footer">
+                    <button className="pd-logout-btn" onClick={() => logout()}>
+                        <LogOut size={20} />
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+            </aside>
 
-            {/* Reschedule Modal */}
-            {rescheduleId && reschedulingBooking && (
-                <div className="reschedule-overlay" onClick={() => setRescheduleId(null)}>
-                    <div className="reschedule-modal" onClick={e => e.stopPropagation()}>
-                        <h3>Reschedule Appointment</h3>
-                        <p className="reschedule-subtitle">{reschedulingBooking.salonName} — {reschedulingBooking.serviceName}</p>
+            {/* Main Content */}
+            <main className="pd-main">
+                <div className="pd-content">
+                    <section className="pd-greeting-section">
+                        <h1>Hello, {user?.name ? user.name.split(' ')[0] : 'Guest'}!</h1>
+                        <p>You have {upcomingBookings.length} appointment{upcomingBookings.length !== 1 ? 's' : ''} scheduled for this week.</p>
+                    </section>
 
-                        <div className="form-group">
-                            <label>New Date</label>
-                            <input
-                                type="date"
-                                value={newDate}
-                                min={new Date().toISOString().split('T')[0]}
-                                onChange={e => setNewDate(e.target.value)}
-                                className="form-input"
-                            />
+                    <section className="pd-appointments-section">
+                        <div className="pd-section-header">
+                            <h2>Upcoming Appointments</h2>
                         </div>
-
-                        <div className="form-group">
-                            <label>New Time</label>
-                            <div className="reschedule-time-grid">
-                                {timeSlots.filter(s => s.available).map(slot => (
-                                    <button
-                                        key={slot.time}
-                                        type="button"
-                                        className={`reschedule-time-slot ${newTime === slot.time ? 'selected' : ''}`}
-                                        onClick={() => setNewTime(slot.time)}
-                                    >
-                                        {slot.time}
-                                    </button>
+                        
+                        {isLoadingAppointments ? (
+                            <div className="global-loading-wrap">
+                                <div className="global-spinner"></div>
+                                <span className="global-loading-text">Loading appointments...</span>
+                            </div>
+                        ) : upcomingBookings.length === 0 ? (
+                            <div className="pd-empty-state">No upcoming appointments found.</div>
+                        ) : (
+                            <div className="pd-appointments-grid">
+                                {upcomingBookings.map(booking => (
+                                    <div key={booking.id} className="pd-appointment-card">
+                                        <div className="pd-appointment-img-wrap">
+                                            <img 
+                                                src={booking.salonImage} 
+                                                alt={booking.salonName} 
+                                                onError={(e) => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    if (booking.fallbackImage && target.src !== booking.fallbackImage) {
+                                                        target.src = booking.fallbackImage;
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="pd-appointment-details">
+                                            <div>
+                                                <div className="pd-appointment-meta">
+                                                    <span className={`pd-status-badge ${booking.status}`}>{booking.status}</span>
+                                                    <span className="pd-booking-id">ID: #{booking.id.substring(0, 6).toUpperCase()}</span>
+                                                </div>
+                                                <h3 className="pd-service-name">{booking.serviceName}</h3>
+                                                <p className="pd-salon-stylist">{booking.salonName} • {booking.stylistName}</p>
+                                                
+                                                <div className="pd-datetime">
+                                                    <div className="pd-datetime-item">
+                                                        <Calendar size={18} />
+                                                        {booking.date}
+                                                    </div>
+                                                    <div className="pd-datetime-item">
+                                                        <Clock size={18} />
+                                                        {booking.time}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="pd-appointment-actions">
+                                                <button className="pd-btn-outline" onClick={() => navigate(`/booking?salon=${booking.salonId}`)}>Reschedule</button>
+                                                <button className="pd-btn-danger" onClick={() => handleCancel(booking.id)} disabled={cancellingId === booking.id}>
+                                                    {cancellingId === booking.id ? <div className="global-spinner small"></div> : 'Cancel'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                        </div>
+                        )}
+                    </section>
 
-                        <div className="reschedule-actions">
-                            <button className="btn btn-primary" onClick={handleReschedule} disabled={!newDate || !newTime}>
-                                Confirm Reschedule
-                            </button>
-                            <button className="btn btn-outline" onClick={() => setRescheduleId(null)}>
-                                Cancel
-                            </button>
+                    <section className="pd-recommended-section">
+                        <div className="pd-section-header pd-col-header">
+                            <h2>Recommended for You</h2>
+                            <p>Based on your recent hair treatments</p>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Appointments */}
-            <section className="appointments-section">
-                <div className="container">
-                    <div className="section-header">
-                        <h2>My Appointments</h2>
-                        <p>{bookings.length} booking{bookings.length !== 1 ? 's' : ''} found</p>
-                    </div>
-
-                    {isLoading ? (
-                        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                            Loading your appointments...
-                        </div>
-                    ) : bookings.length === 0 ? (
-                        <div className="profile-empty">
-                            <p>You haven't booked any appointments yet.</p>
-                            <Link to="/services" className="btn btn-primary">Browse Services</Link>
-                        </div>
-                    ) : (
-                        <div className="bookings-grid">
-                            {bookings.map((booking) => (
-                                <div key={booking.id} className={`booking-item ${booking.status === 'cancelled' ? 'item-cancelled' : ''}`}>
-                                    <div className="booking-item-info">
-                                        <h4>{booking.salonName}</h4>
-                                        <p className="service-name">{booking.serviceName}</p>
-                                        <p className="booking-meta">
-                                            {booking.date} at {booking.time} • Stylist: {booking.stylistName}
-                                            {booking.paymentMethod && (
-                                                <span> • {paymentLabel[booking.paymentMethod] || booking.paymentMethod}</span>
-                                            )}
-                                            {booking.paymentStatus && (
-                                                <span className={`badge-status ${booking.paymentStatus.toLowerCase()}`} style={{ marginLeft: '8px', fontSize: '0.65rem', padding: '2px 6px', display: 'inline-block', verticalAlign: 'middle' }}>
-                                                    {booking.paymentStatus}
-                                                </span>
-                                            )}
-                                        </p>
-                                    </div>
-                                    <div className="booking-item-right">
-                                        <span className={`badge ${
-                                            booking.status === 'cancelled' ? 'badge-cancelled'
-                                            : booking.status === 'rescheduled' ? 'badge-rescheduled'
-                                            : booking.status === 'completed' ? 'badge-completed'
-                                            : 'badge-confirmed'
-                                        }`}>
-                                            {booking.status === 'cancelled' ? 'Cancelled'
-                                            : booking.status === 'rescheduled' ? 'Rescheduled'
-                                            : booking.status === 'completed' ? 'Completed'
-                                            : 'Confirmed'}
-                                        </span>
-                                        <span className="booking-price">${booking.price}</span>
-                                        {booking.status === 'cancelled' || booking.status === 'completed' ? (
-                                            <button className="rebook-btn" onClick={() => handleBookAgain(booking)}>Book Again</button>
-                                        ) : (
-                                            <div className="booking-actions-row">
-                                                <button className="reschedule-btn" onClick={() => openReschedule(booking.id)}>Reschedule</button>
-                                                <button className="cancel-btn" onClick={() => handleCancel(booking.id)}>Cancel</button>
+                        
+                        {isLoadingSalons ? (
+                            <div className="global-loading-wrap">
+                                <div className="global-spinner"></div>
+                                <span className="global-loading-text">Loading recommendations...</span>
+                            </div>
+                        ) : (
+                            <div className="pd-recommended-grid">
+                                {recommendedSalons.map(salon => (
+                                    <div key={salon.id} className="pd-salon-card">
+                                        <div className="pd-salon-img-wrap">
+                                            <img src={salon.image || 'https://via.placeholder.com/300x200?text=Salon'} alt={salon.name} />
+                                        </div>
+                                        <div className="pd-salon-info">
+                                            <div className="pd-salon-title-row">
+                                                <h4 className="pd-salon-name">{salon.name}</h4>
+                                                <div className="pd-salon-rating">
+                                                    <Star size={14} fill="currentColor" />
+                                                    <span>{salon.rating || '4.8'}</span>
+                                                </div>
                                             </div>
-                                        )}
+                                            <p className="pd-salon-desc">{salon.location || salon.city || 'Top Rated Salon'}</p>
+                                            <div className="pd-salon-footer" style={{ justifyContent: 'flex-end' }}>
+                                                <Link to={`/salon/${salon.id}`} className="pd-btn-primary">View</Link>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )}
+                    </section>
                 </div>
-            </section>
-        </main>
+            </main>
+        </div>
     );
 }

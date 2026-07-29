@@ -3,23 +3,24 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String        @id @default(uuid())
-  auth0Id   String        @unique
-  email     String        @unique
-  name      String
-  role      Role          @default(CLIENT)
-  phone     String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id            String         @id @default(uuid())
+  auth0Id       String         @unique
+  email         String         @unique
+  name          String
+  role          Role           @default(CLIENT)
+  phone         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   bookings      Appointment[]  @relation("ClientBookings")
+  notifications Notification[]
   reviews       Review[]
   salons        Salon[]        @relation("SalonOwner")
-  notifications Notification[]
 }
 
 model Salon {
@@ -51,6 +52,7 @@ model Service {
   description  String?
   price        Float
   duration     Int
+  image        String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   salonId      String
@@ -104,6 +106,18 @@ model Stylist {
   salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
 }
 
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  message   String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 enum Role {
   CLIENT
   SALON_OWNER
@@ -135,16 +149,4 @@ enum SalonStatus {
   APPROVED
   PENDING
   REJECTED
-}
-
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  title     String?
-  message   String
-  type      String   @default("info")
-  read      Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

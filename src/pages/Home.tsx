@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
-import CategoryPills from '../components/CategoryPills';
+
 import ServiceCard from '../components/ServiceCard';
 import SalonCard from '../components/SalonCard';
 import SkeletonCard from '../components/SkeletonCard';
@@ -10,13 +10,15 @@ import { fetchSalons } from '../lib/api';
 import './Home.css';
 
 export default function Home() {
-    const [activeCategory, setActiveCategory] = useState('All Services');
+
     const [isLoading, setIsLoading] = useState(true);
     const [salonQuery, setSalonQuery] = useState('');
     const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [apiSalons, setApiSalons] = useState<Salon[]>([]);
 
-    // Detect user coordinates on mount
+    const [rawApiData, setRawApiData] = useState<any[]>([]);
+
+    // Detect user coordinates on mount (separate from salon fetch)
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -33,13 +35,15 @@ export default function Home() {
         }
     }, []);
 
+    // Fetch salons ONCE on mount — independent of geolocation
     useEffect(() => {
         const loadSalons = async () => {
             setIsLoading(true);
             try {
                 const data = await fetchSalons();
                 if (Array.isArray(data) && data.length > 0) {
-                    setApiSalons(data.map((s: any) => mapApiSalonToFrontendSalon(s, userCoords)));
+                    setRawApiData(data);
+                    setApiSalons(data.map((s: any) => mapApiSalonToFrontendSalon(s, null)));
                 } else {
                     setApiSalons(salons);
                 }
@@ -51,12 +55,26 @@ export default function Home() {
             }
         };
         loadSalons();
-    }, [userCoords]);
+    }, []); // ← empty deps: fetch only once
 
-    const filteredServices =
-        activeCategory === 'All Services'
-            ? services.slice(0, 4)
-            : services.filter((s) => s.category === activeCategory).slice(0, 4);
+    // When geolocation resolves, remap distances client-side without a new API call
+    useEffect(() => {
+        if (userCoords && rawApiData.length > 0) {
+            setApiSalons(rawApiData.map((s: any) => mapApiSalonToFrontendSalon(s, userCoords)));
+        }
+    }, [userCoords, rawApiData]);
+
+    // Always show the same fixed 4 trending services; resolve salonId from live data for booking links
+    const trendingServices = services.slice(0, 4);
+    const serviceSalonMap = useMemo(() => {
+        const salonMap = new Map<string, string>(); // service name -> salonId
+        apiSalons.forEach(salon =>
+            salon.services.forEach(s => {
+                if (!salonMap.has(s.name)) salonMap.set(s.name, salon.id);
+            })
+        );
+        return salonMap;
+    }, [apiSalons]);
 
     const filteredSalons = useMemo(() => {
         let list = [...apiSalons];
@@ -86,22 +104,14 @@ export default function Home() {
             <section className="hero">
                 <div className="hero-overlay" />
                 <div className="hero-content container">
-                    <p className="hero-tagline">The Premium Beauty Experience</p>
+                    <p className="hero-tagline">The Premium African Beauty Experience</p>
                     <h1>
-                        Your beauty, <em>scheduled.</em>
+                        Your crown, <em>perfected.</em>
                     </h1>
                     <p className="hero-subtitle">
-                        Discover and book the best beauty services in your city. From
-                        precision cuts to revitalizing facials.
+                        Discover and book top African hair braiders, barbering, locs, and glam studios in your city. From knotless braids to raw shea facials.
                     </p>
                     <SearchBar variant="hero" onQueryChange={setSalonQuery} />
-                </div>
-            </section>
-
-            {/* Category Pills */}
-            <section className="section categories-section">
-                <div className="container">
-                    <CategoryPills active={activeCategory} onChange={setActiveCategory} />
                 </div>
             </section>
 
@@ -120,8 +130,8 @@ export default function Home() {
                     <div className="services-grid">
                         {isLoading
                             ? [1, 2, 3, 4].map((i) => <SkeletonCard key={i} variant="service" />)
-                            : filteredServices.map((service) => (
-                                <ServiceCard key={service.id} service={service} />
+                            : trendingServices.map((service) => (
+                                <ServiceCard key={service.id} service={service} salonId={serviceSalonMap.get(service.name)} />
                             ))
                         }
                     </div>

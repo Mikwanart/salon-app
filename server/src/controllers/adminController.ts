@@ -37,6 +37,8 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
 
     const totalRevenue = revenueResult.reduce((sum, app) => sum + (app.service?.price || 0), 0);
 
+
+
     res.json({
       users: {
         total: totalUsers,

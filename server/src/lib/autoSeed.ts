@@ -5,21 +5,58 @@ export async function autoSeedSalons() {
   try {
     const existingCount = await prisma.salon.count();
     if (existingCount > 0) {
+      // DB already has data — do nothing. Sync is no longer automatic.
       return;
     }
 
-    console.log('🌱 Database is empty. Seeding default salons...');
 
-    const owner = await prisma.user.upsert({
+    console.log('🌱 Database is empty. Seeding default African salons...');
+
+    const owner1 = await prisma.user.upsert({
       where: { email: 'owner@lumiere.com' },
       update: {},
       create: {
         auth0Id: 'auth0|owner-1',
         email: 'owner@lumiere.com',
-        name: 'Emma Salon Owner',
+        name: 'Maame Akua (Owner)',
         role: Role.SALON_OWNER,
       },
     });
+
+    const owner2 = await prisma.user.upsert({
+      where: { email: 'owner.ebony@lumiere.com' },
+      update: {},
+      create: {
+        auth0Id: 'auth0|owner-2',
+        email: 'owner.ebony@lumiere.com',
+        name: 'Ama Mensah (Owner)',
+        role: Role.SALON_OWNER,
+      },
+    });
+
+    const owner3 = await prisma.user.upsert({
+      where: { email: 'owner.akoma@lumiere.com' },
+      update: {},
+      create: {
+        auth0Id: 'auth0|owner-3',
+        email: 'owner.akoma@lumiere.com',
+        name: 'Zola Nkem (Owner)',
+        role: Role.SALON_OWNER,
+      },
+    });
+
+    const owner4 = await prisma.user.upsert({
+      where: { email: 'owner.obaahema@lumiere.com' },
+      update: {},
+      create: {
+        auth0Id: 'auth0|owner-4',
+        email: 'owner.obaahema@lumiere.com',
+        name: 'Nia Okafor (Owner)',
+        role: Role.SALON_OWNER,
+      },
+    });
+
+
 
     const client1 = await prisma.user.upsert({
       where: { email: 'jessica@example.com' },
@@ -27,7 +64,7 @@ export async function autoSeedSalons() {
       create: {
         auth0Id: 'auth0|client-1',
         email: 'jessica@example.com',
-        name: 'Jessica T.',
+        name: 'Akosua M.',
         role: Role.CLIENT,
       },
     });
@@ -38,58 +75,77 @@ export async function autoSeedSalons() {
       create: {
         auth0Id: 'auth0|client-2',
         email: 'maria@example.com',
-        name: 'Maria K.',
+        name: 'Esi K.',
         role: Role.CLIENT,
       },
     });
 
     const salonsData = [
       {
-        name: 'Lumiere Beauty Studio',
-        image: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&q=80&w=800',
-        address: '9630 Santa Monica Blvd',
-        city: 'Beverly Hills',
-        state: 'CA',
-        zip: '90210',
-        phone: '(310) 555-0142',
-        description: 'Award-winning luxury beauty studio offering premium hair, nail, and skincare services in the heart of Beverly Hills.',
+        ownerId: owner1.id,
+        name: 'Maame Akua Braiding Salon',
+        image: '/images/salon-3.jpg',
+        address: '14 Independence Ave',
+        city: 'Cantonments, Accra',
+        state: 'Greater Accra',
+        zip: '00233',
+        phone: '+233 24 555 0142',
+        description: 'Award-winning luxury African hair braiding lounge offering premium knotless braids, Fulani styles, locs, and scalp protection care in Cantonments, Accra.',
         services: [
-          { name: 'Precision Haircuts', category: 'Haircare', price: 65, duration: 45, description: 'Expert precision cuts tailored to your face shape and personal style.' },
-          { name: 'Artistic Manicures', category: 'Nail Art', price: 45, duration: 60, description: 'Creative nail art and luxurious hand treatments for a stunning finish.' },
-          { name: 'Revitalizing Facials', category: 'Skincare', price: 90, duration: 75, description: 'Deep cleansing and rejuvenating facial treatments for radiant skin.' },
-          { name: 'Glamour Makeup', category: 'Makeup', price: 85, duration: 60, description: 'Professional makeup artistry for weddings, events, and everyday glam.' }
+          { name: 'Braiding & Locs', category: 'Haircare', price: 250, duration: 180, description: 'Neat, lightweight knotless braids and loc installations crafted with scalp protection and seamless parting.', image: '/images/service-braids.jpg' },
+          { name: 'Ankara Art Manicure', category: 'Nail Art', price: 90, duration: 60, description: 'Vivid African print nail designs featuring hand-painted geometric wax motifs and hand spa treatment.', image: '/images/service-nails.jpg' },
+          { name: 'Wigs & Styling', category: 'Haircare', price: 150, duration: 90, description: 'Custom wig installation, frontal melting, precision layer cuts, and luxury unit styling.', image: '/images/service-wigs.jpg' },
+          { name: 'Natural Hair Care', category: 'Haircare', price: 200, duration: 75, description: 'Deep hydration treatments, scalp steam conditioning, natural coil definition, and moisture lock care.', image: '/images/service-natural.jpg' }
         ]
       },
       {
-        name: 'The Velvet Chair',
-        image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=800',
-        address: '350 S Grand Ave',
-        city: 'Los Angeles',
-        state: 'CA',
-        zip: '90071',
-        phone: '(213) 555-0198',
-        description: 'A modern, chic salon specializing in cutting-edge hair techniques and artisan nail services.',
+        ownerId: owner2.id,
+        name: 'Osu Ebony & Gold Hair Studio',
+        image: '/images/salon-2.jpg',
+        address: '42 Ring Road East',
+        city: 'Osu, Accra',
+        state: 'Greater Accra',
+        zip: '00233',
+        phone: '+233 20 555 0198',
+        description: 'A modern, chic African beauty sanctuary specializing in natural hair care, Ankara nail art, and precision styling in Osu.',
         services: [
-          { name: 'Revitalizing Facials', category: 'Skincare', price: 90, duration: 75, description: 'Deep cleansing and rejuvenating facial treatments for radiant skin.' },
-          { name: 'Glamour Makeup', category: 'Makeup', price: 85, duration: 60, description: 'Professional makeup artistry for weddings, events, and everyday glam.' },
-          { name: 'Balayage Coloring', category: 'Haircare', price: 150, duration: 120, description: 'Seamless, sun-kissed balayage coloring for a natural dimensional look.' },
-          { name: 'Gel Extensions', category: 'Nail Art', price: 70, duration: 90, description: 'Long-lasting gel nail extensions with flawless application.' }
+          { name: 'Wigs & Styling', category: 'Haircare', price: 150, duration: 90, description: 'Custom wig installation, frontal melting, precision layer cuts, and luxury unit styling.', image: '/images/service-wigs.jpg' },
+          { name: 'Natural Hair Care', category: 'Haircare', price: 200, duration: 75, description: 'Deep hydration treatments, scalp steam conditioning, natural coil definition, and moisture lock care.', image: '/images/service-natural.jpg' },
+          { name: 'Fulani Braids with Beads', category: 'Haircare', price: 220, duration: 150, description: 'Authentic Fulani tribal braids embellished with wooden beads, brass cuffs, and shell accessories.', image: '/images/service-braids.jpg' },
+          { name: 'Goddess Locs', category: 'Haircare', price: 280, duration: 210, description: 'Boho chic faux locs with curly wavy ends for an effortless regal crown.', image: '/images/service-braids.jpg' }
         ]
       },
       {
-        name: 'Pure Aura Spa',
+        ownerId: owner3.id,
+        name: 'Akoma Spa & Beauty Sanctuary',
         image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800',
-        address: '1201 Abbot Kinney Blvd',
-        city: 'Venice',
-        state: 'CA',
-        zip: '90291',
-        phone: '(424) 555-0167',
-        description: 'An exclusive spa and beauty destination focused on holistic beauty treatments.',
+        address: '88 Lagos Avenue',
+        city: 'East Legon, Accra',
+        state: 'Greater Accra',
+        zip: '00233',
+        phone: '+233 26 555 0167',
+        description: 'An exclusive spa and beauty destination focused on holistic African hair care, Gele wrapping, and luxury pampering.',
         services: [
-          { name: 'Balayage Coloring', category: 'Haircare', price: 150, duration: 120, description: 'Seamless, sun-kissed balayage coloring for a natural dimensional look.' },
-          { name: 'Gel Extensions', category: 'Nail Art', price: 70, duration: 90, description: 'Long-lasting gel nail extensions with flawless application.' },
-          { name: 'Chemical Peel', category: 'Skincare', price: 120, duration: 45, description: 'Clinical-grade chemical peels to smooth texture and brighten skin tone.' },
-          { name: 'Bridal Makeup', category: 'Makeup', price: 200, duration: 90, description: 'Complete bridal beauty package with trial session included.' }
+          { name: 'Fulani Braids with Beads', category: 'Haircare', price: 220, duration: 150, description: 'Authentic Fulani tribal braids embellished with wooden beads, brass cuffs, and shell accessories.', image: '/images/service-braids.jpg' },
+          { name: 'Goddess Locs', category: 'Haircare', price: 280, duration: 210, description: 'Boho chic faux locs with curly wavy ends for an effortless regal crown.', image: '/images/service-braids.jpg' },
+          { name: 'Afro Fade & Sharp Line-up', category: 'Barbering', price: 80, duration: 45, description: 'Precision razor fade cut, edge line-up, beard shaping, and hot towel scalp treatment.', image: '/images/service-barbering.jpg' },
+          { name: 'Ghana Weaving & Cornrows', category: 'Haircare', price: 180, duration: 120, description: 'Sleek feed-in cornrows and custom Ghana weaving patterns using lightweight extensions.', image: '/images/service-braids.jpg' }
+        ]
+      },
+      {
+        ownerId: owner4.id,
+        name: 'Obaahema Royalty Silk and Afro Salon',
+        image: '/images/salon-1.jpg',
+        address: '15 Kejetia Market Rd',
+        city: 'Kejetia, Kumasi',
+        state: 'Ashanti',
+        zip: '00233',
+        phone: '+233 27 555 0189',
+        description: 'Boutique hair bar offering silk press treatments, loc maintenance, natural hair steam conditioning, and custom wig styling in Kejetia.',
+        services: [
+          { name: 'Ankara Art Manicure', category: 'Nail Art', price: 90, duration: 60, description: 'Vivid African print nail designs featuring hand-painted geometric wax motifs and hand spa treatment.', image: '/images/service-nails.jpg' },
+          { name: 'Wigs & Styling', category: 'Haircare', price: 150, duration: 90, description: 'Custom wig installation, frontal melting, precision layer cuts, and luxury unit styling.', image: '/images/service-wigs.jpg' },
+          { name: 'Natural Hair Care', category: 'Haircare', price: 200, duration: 75, description: 'Deep hydration treatments, scalp steam conditioning, natural coil definition, and moisture lock care.', image: '/images/service-natural.jpg' }
         ]
       }
     ];
@@ -105,14 +161,14 @@ export async function autoSeedSalons() {
           zip: s.zip,
           phone: s.phone,
           description: s.description,
-          ownerId: owner.id,
+          ownerId: s.ownerId,
           services: { create: s.services },
           stylists: {
             create: [
-              { name: 'Emma Laurent', role: 'Senior Stylist', image: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Balayage', 'Precision Cuts', 'Bridal'] },
-              { name: 'Sofia Chen', role: 'Nail Artist', image: 'https://images.unsplash.com/photo-1595152772835-219674b2a8a6?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Gel Art', 'French Tips', '3D Nail Art'] },
-              { name: 'Olivia Martinez', role: 'Skincare Specialist', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Chemical Peels', 'Hydrafacials', 'Anti-Aging'] },
-              { name: 'Chloe Williams', role: 'Makeup Artist', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400', rating: 4.7, specialties: ['Bridal', 'Editorial', 'Special FX'] }
+              { name: 'Akosua Pokuaa', role: 'Master Braider & Loc Specialist', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Knotless Braids', 'Fulani Braids', 'Goddess Locs'] },
+              { name: 'Ama Serwaa', role: 'Nail & Ankara Artist', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Ankara Art', 'Gel Extensions'] },
+              { name: 'Abena Osei', role: 'Melanin Skincare Specialist', image: 'https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Shea Butter Facials', 'Melanin Glow'] },
+              { name: 'Yaa Asantewaa', role: 'Afro Glam Artist', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Gele Styling', 'Bridal Glam'] }
             ]
           }
         }
@@ -120,13 +176,13 @@ export async function autoSeedSalons() {
 
       await prisma.review.createMany({
         data: [
-          { salonId: salon.id, userId: client1.id, rating: 5, comment: 'Absolutely incredible experience!' },
-          { salonId: salon.id, userId: client2.id, rating: 4, comment: 'Great services, very relaxing.' }
+          { salonId: salon.id, userId: client1.id, rating: 5, comment: 'Absolutely incredible African styling experience!' },
+          { salonId: salon.id, userId: client2.id, rating: 5, comment: 'Painless braiding and top notch hospitality.' }
         ]
       });
     }
 
-    console.log('✅ Default salons auto-seeded successfully!');
+    console.log('✅ Default African salons auto-seeded successfully!');
   } catch (err) {
     console.error('Failed to auto-seed salons:', err);
   }

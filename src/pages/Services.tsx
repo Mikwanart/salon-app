@@ -12,8 +12,9 @@ export default function Services() {
     const [apiSalons, setApiSalons] = useState<Salon[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+    const [rawApiData, setRawApiData] = useState<any[]>([]);
 
-    // Detect user coordinates on mount
+    // Detect user coordinates on mount (separate from salon fetch)
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -30,13 +31,15 @@ export default function Services() {
         }
     }, []);
 
+    // Fetch salons ONCE on mount — independent of geolocation
     useEffect(() => {
         const loadSalons = async () => {
             setIsLoading(true);
             try {
                 const data = await fetchSalons();
                 if (Array.isArray(data) && data.length > 0) {
-                    setApiSalons(data.map((s: any) => mapApiSalonToFrontendSalon(s, userCoords)));
+                    setRawApiData(data);
+                    setApiSalons(data.map((s: any) => mapApiSalonToFrontendSalon(s, null)));
                 } else {
                     setApiSalons(salons);
                 }
@@ -48,13 +51,20 @@ export default function Services() {
             }
         };
         loadSalons();
-    }, [userCoords]);
+    }, []); // ← fetch only once
+
+    // Remap distances client-side when geolocation resolves
+    useEffect(() => {
+        if (userCoords && rawApiData.length > 0) {
+            setApiSalons(rawApiData.map((s: any) => mapApiSalonToFrontendSalon(s, userCoords)));
+        }
+    }, [userCoords, rawApiData]);
 
     const activeCategory = searchParams.get('category') || 'All Services';
     const query = searchParams.get('q') || '';
     const locationQuery = searchParams.get('l') || '';
 
-    const [priceRange, setPriceRange] = useState(300);
+    const [priceRange, setPriceRange] = useState(500);
     const [minRating, setMinRating] = useState(0);
     const [selectedDistances, setSelectedDistances] = useState<string[]>([]);
     const [openNow, setOpenNow] = useState(false);
@@ -89,7 +99,15 @@ export default function Services() {
     };
 
     const finalServices = useMemo(() => {
-        const allServices = apiSalons.flatMap(salon => salon.services);
+        // Deduplicate by service name so no service appears more than once
+        const seen = new Set<string>();
+        const allServices = apiSalons
+            .flatMap(salon => salon.services)
+            .filter(s => {
+                if (seen.has(s.name)) return false;
+                seen.add(s.name);
+                return true;
+            });
         const salons = apiSalons;
 
         let result = allServices.filter((s: Service) => {
@@ -146,11 +164,11 @@ export default function Services() {
                     <aside className="services-sidebar">
                         <div className="filter-group">
                             <h4>Price Range</h4>
-                            <input type="range" min="20" max="300" value={priceRange} onChange={(e) => setPriceRange(Number(e.target.value))} className="price-slider" />
+                            <input type="range" min="20" max="500" value={priceRange} onChange={(e) => setPriceRange(Number(e.target.value))} className="price-slider" />
                             <div className="price-labels">
-                                <span>$20</span>
-                                <span className="price-current">${priceRange}</span>
-                                <span>$300</span>
+                                <span>GH₵20</span>
+                                <span className="price-current">GH₵{priceRange}</span>
+                                <span>GH₵500</span>
                             </div>
                         </div>
 
@@ -222,11 +240,17 @@ export default function Services() {
 
                         <div className="services-grid">
                             {isLoading ? (
-                                <p>Loading services...</p>
+                                <div className="global-loading-wrap" style={{ gridColumn: '1 / -1' }}>
+                                    <div className="global-spinner"></div>
+                                    <span className="global-loading-text">Loading services...</span>
+                                </div>
                             ) : (
-                                finalServices.map((service) => (
-                                    <ServiceCard key={service.id} service={service} />
-                                ))
+                                finalServices.map((service) => {
+                                        const matchingSalon = apiSalons.find(sl => sl.services.some(sv => sv.name === service.name));
+                                        return (
+                                            <ServiceCard key={service.id} service={service} salonId={matchingSalon?.id} />
+                                        );
+                                    })
                             )}
                         </div>
                         {!isLoading && finalServices.length === 0 && (
@@ -234,7 +258,7 @@ export default function Services() {
                                 <p>No services found matching your criteria.</p>
                                 <button className="btn btn-outline" onClick={() => {
                                     setSearchParams({});
-                                    setPriceRange(300);
+                                    setPriceRange(500);
                                     setMinRating(0);
                                     setSelectedDistances([]);
                                     setOpenNow(false);

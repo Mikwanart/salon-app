@@ -12,7 +12,12 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     }, [isLoading, isLoggedIn, login]);
 
     if (isLoading || !isLoggedIn) {
-        return <div style={{ textAlign: 'center', padding: '40px' }}>Redirecting to secure login...</div>;
+        return (
+            <div className="global-loading-wrap" style={{ minHeight: '60vh' }}>
+                <div className="global-spinner"></div>
+                <span className="global-loading-text">Redirecting to secure login...</span>
+            </div>
+        );
     }
 
     return <>{children}</>;

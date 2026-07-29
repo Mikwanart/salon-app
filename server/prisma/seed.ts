@@ -42,51 +42,51 @@ async function main() {
   // 3. Define Salons (matching frontend data.ts)
   const salonsData = [
     {
-      name: 'Lumiere Beauty Studio',
-      image: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&q=80&w=800',
-      address: '9630 Santa Monica Blvd',
-      city: 'Beverly Hills',
-      state: 'CA',
-      zip: '90210',
-      phone: '(310) 555-0142',
-      description: 'Award-winning luxury beauty studio offering premium hair, nail, and skincare services in the heart of Beverly Hills.',
+      name: 'Maame Akua Braiding Salon',
+      image: '/images/salon-3.jpg',
+      address: '14 Independence Ave',
+      city: 'Cantonments, Accra',
+      state: 'Greater Accra',
+      zip: '00233',
+      phone: '+233 24 555 0142',
+      description: 'Award-winning luxury African hair braiding lounge offering premium knotless braids, Fulani styles, locs, and scalp protection care in Cantonments, Accra.',
       services: [
-        { name: 'Precision Haircuts', category: 'Haircare', price: 65, duration: 45, description: 'Expert precision cuts tailored to your face shape and personal style.' },
-        { name: 'Artistic Manicures', category: 'Nail Art', price: 45, duration: 60, description: 'Creative nail art and luxurious hand treatments for a stunning finish.' },
-        { name: 'Revitalizing Facials', category: 'Skincare', price: 90, duration: 75, description: 'Deep cleansing and rejuvenating facial treatments for radiant skin.' },
-        { name: 'Glamour Makeup', category: 'Makeup', price: 85, duration: 60, description: 'Professional makeup artistry for weddings, events, and everyday glam.' }
+        { name: 'Ghana Feed-In Braids & Knotless Locs', category: 'Haircare', price: 250, duration: 180, description: 'Neat, lightweight knotless braids and loc installations crafted with scalp protection and seamless parting.' },
+        { name: 'Kente Art Manicure & Hand Spa', category: 'Nail Art', price: 90, duration: 60, description: 'Vivid Ghanaian Kente print nail designs featuring hand-painted geometric wax motifs and natural shea hand spa treatment.' },
+        { name: 'Frontal Melt & Ghanaian Custom Unit', category: 'Wigs & Styling', price: 150, duration: 90, description: 'Custom wig installation, frontal melting, precision layer cuts, and luxury unit styling.' },
+        { name: 'Shea Butter Moisture Lock & Scalp Steam', category: 'Natural Hair Care', price: 200, duration: 75, description: 'Deep hydration treatments, Tamale shea butter scalp steam conditioning, natural coil definition, and moisture lock care.' }
       ]
     },
     {
-      name: 'The Velvet Chair',
-      image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=800',
-      address: '350 S Grand Ave',
-      city: 'Los Angeles',
-      state: 'CA',
-      zip: '90071',
-      phone: '(213) 555-0198',
-      description: 'A modern, chic salon specializing in cutting-edge hair techniques and artisan nail services.',
+      name: 'Osu Ebony & Gold Hair Studio',
+      image: '/images/salon-2.jpg',
+      address: '42 Ring Road East',
+      city: 'Osu, Accra',
+      state: 'Greater Accra',
+      zip: '00233',
+      phone: '+233 20 555 0198',
+      description: 'A modern, chic African beauty sanctuary specializing in natural hair care, Ankara nail art, and precision styling in Osu.',
       services: [
-        { name: 'Revitalizing Facials', category: 'Skincare', price: 90, duration: 75, description: 'Deep cleansing and rejuvenating facial treatments for radiant skin.' },
-        { name: 'Glamour Makeup', category: 'Makeup', price: 85, duration: 60, description: 'Professional makeup artistry for weddings, events, and everyday glam.' },
-        { name: 'Balayage Coloring', category: 'Haircare', price: 150, duration: 120, description: 'Seamless, sun-kissed balayage coloring for a natural dimensional look.' },
-        { name: 'Gel Extensions', category: 'Nail Art', price: 70, duration: 90, description: 'Long-lasting gel nail extensions with flawless application.' }
+        { name: 'Frontal Melt & Ghanaian Custom Unit', category: 'Wigs & Styling', price: 150, duration: 90, description: 'Custom wig installation, frontal melting, precision layer cuts, and luxury unit styling.' },
+        { name: 'Shea Butter Moisture Lock & Scalp Steam', category: 'Natural Hair Care', price: 200, duration: 75, description: 'Deep hydration treatments, Tamale shea butter scalp steam conditioning, natural coil definition, and moisture lock care.' },
+        { name: 'Fulani Tribal Braids with Brass & Beads', category: 'Haircare', price: 220, duration: 150, description: 'Authentic Fulani tribal braids embellished with wooden beads, brass cuffs, and shell accessories.' },
+        { name: 'Boho Goddess Locs & Ashanti Crown', category: 'Haircare', price: 280, duration: 210, description: 'Boho chic faux locs with curly wavy ends for an effortless regal crown.' }
       ]
     },
     {
-      name: 'Pure Aura Spa',
+      name: 'Akoma Spa & Beauty Sanctuary',
       image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800',
-      address: '1201 Abbot Kinney Blvd',
-      city: 'Venice',
-      state: 'CA',
-      zip: '90291',
-      phone: '(424) 555-0167',
-      description: 'An exclusive spa and beauty destination focused on holistic beauty treatments.',
+      address: '88 Lagos Avenue',
+      city: 'East Legon, Accra',
+      state: 'Greater Accra',
+      zip: '00233',
+      phone: '+233 26 555 0167',
+      description: 'An exclusive spa and beauty destination focused on holistic African hair care, Gele wrapping, and luxury pampering.',
       services: [
-        { name: 'Balayage Coloring', category: 'Haircare', price: 150, duration: 120, description: 'Seamless, sun-kissed balayage coloring for a natural dimensional look.' },
-        { name: 'Gel Extensions', category: 'Nail Art', price: 70, duration: 90, description: 'Long-lasting gel nail extensions with flawless application.' },
-        { name: 'Chemical Peel', category: 'Skincare', price: 120, duration: 45, description: 'Clinical-grade chemical peels to smooth texture and brighten skin tone.' },
-        { name: 'Bridal Makeup', category: 'Makeup', price: 200, duration: 90, description: 'Complete bridal beauty package with trial session included.' }
+        { name: 'Fulani Tribal Braids with Brass & Beads', category: 'Haircare', price: 220, duration: 150, description: 'Authentic Fulani tribal braids embellished with wooden beads, brass cuffs, and shell accessories.' },
+        { name: 'Boho Goddess Locs & Ashanti Crown', category: 'Haircare', price: 280, duration: 210, description: 'Boho chic faux locs with curly wavy ends for an effortless regal crown.' },
+        { name: 'Accra Sharp Taper Fade & Line-Up', category: 'Barbering', price: 120, duration: 45, description: 'Crisp taper fade, texturized afro top conditioning, hot towel, and razor-sharp line-up.' },
+        { name: 'Ghana Weaving & Feed-in Cornrows', category: 'Haircare', price: 180, duration: 120, description: 'Intricate feed-in cornrow patterns rooted in rich West African artistry and scalp care.' }
       ]
     }
   ];
@@ -112,10 +112,12 @@ async function main() {
           },
           stylists: {
             create: [
-              { name: 'Emma Laurent', role: 'Senior Stylist', image: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Balayage', 'Precision Cuts', 'Bridal'] },
-              { name: 'Sofia Chen', role: 'Nail Artist', image: 'https://images.unsplash.com/photo-1595152772835-219674b2a8a6?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Gel Art', 'French Tips', '3D Nail Art'] },
-              { name: 'Olivia Martinez', role: 'Skincare Specialist', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Chemical Peels', 'Hydrafacials', 'Anti-Aging'] },
-              { name: 'Chloe Williams', role: 'Makeup Artist', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400', rating: 4.7, specialties: ['Bridal', 'Editorial', 'Special FX'] }
+              { name: 'Akosua Pokuaa', role: 'Master Braider & Loc Specialist', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Knotless Braids', 'Fulani Braids', 'Goddess Locs'] },
+              { name: 'Ama Serwaa', role: 'Nail & Ankara Artist', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Ankara Art', 'Gel Extensions', 'Spa Pedicures'] },
+              { name: 'Abena Osei', role: 'Melanin Skincare Specialist', image: 'https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Shea Butter Facials', 'Melanin Glow', 'Chemical Peels'] },
+              { name: 'Yaa Asantewaa', role: 'Afro Glam & Gele Styling Artist', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Gele Styling', 'Bridal Glam', 'Editorial Beats'] },
+              { name: 'Kofi Boakye', role: 'Barbering & Afro Precision Cut Specialist', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Afro Fade', 'Sharp Line-up', 'Beard Grooming'] },
+              { name: 'Adwoa Kyei', role: 'Wig Customization & Silk Press Specialist', image: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Wig Melt', 'Silk Press', 'Frontal Customization'] }
             ]
           }
         }

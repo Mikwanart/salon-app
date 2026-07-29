@@ -4,7 +4,7 @@ section.hero {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1600') center/cover no-repeat;
+    background: url('/images/hero-african-braids.jpg') center/cover no-repeat;
     text-align: center;
     overflow: hidden;
 }

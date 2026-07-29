@@ -19,7 +19,12 @@ export default function RoleProtectedRoute({ children, role }: RoleProtectedRout
     }, [isLoading, isLoggedIn, login]);
 
     if (isLoading || !isLoggedIn) {
-        return <div style={{ textAlign: 'center', padding: '40px' }}>Redirecting to secure login...</div>;
+        return (
+            <div className="global-loading-wrap" style={{ minHeight: '60vh' }}>
+                <div className="global-spinner"></div>
+                <span className="global-loading-text">Redirecting to secure login...</span>
+            </div>
+        );
     }
 
     // User is logged in but doesn't have the required role

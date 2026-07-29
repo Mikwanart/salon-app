@@ -86,6 +86,28 @@ class NotificationService {
     return this.mailTransporter!;
   }
 
+  private simulateSms(to: string, body: string): void {
+    console.log('\n┌────────────────────────────────────────────────────────┐');
+    console.log('│                 📱 SIMULATED SMS ALERT                 │');
+    console.log('├────────────────────────────────────────────────────────┤');
+    console.log(`│ TO:   %-48s │`, to);
+    
+    const words = body.split(' ');
+    let line = '';
+    for (const word of words) {
+      if ((line + word).length > 48) {
+        console.log(`│ MSG:  %-48s │`, line.trim());
+        line = '';
+      }
+      line += word + ' ';
+    }
+    if (line) {
+      console.log(`│ MSG:  %-48s │`, line.trim());
+    }
+    
+    console.log('└────────────────────────────────────────────────────────┘\n');
+  }
+
   /**
    * Formats and prints SMS outputs.
    */
@@ -113,30 +135,16 @@ class NotificationService {
           to: cleanTo
         });
         console.log(`📱 SMS sent via Twilio to ${cleanTo} (SID: ${msg.sid})`);
-      } catch (err) {
-        console.error(`❌ Failed to send SMS to ${cleanTo} via Twilio:`, err);
+      } catch (err: any) {
+        if (err.status === 429 || err.code === 63038) {
+          console.warn(`⚠️ Twilio daily limit exceeded. Simulating SMS instead for ${cleanTo}`);
+          this.simulateSms(cleanTo, body);
+        } else {
+          console.error(`❌ Failed to send SMS to ${cleanTo} via Twilio:`, err.message);
+        }
       }
     } else {
-      // Beautiful console logger block
-      console.log('\n┌────────────────────────────────────────────────────────┐');
-      console.log('│                 📱 SIMULATED SMS ALERT                 │');
-      console.log('├────────────────────────────────────────────────────────┤');
-      console.log(`│ TO:   %-48s │`, cleanTo);
-      
-      const words = body.split(' ');
-      let line = '';
-      for (const word of words) {
-        if ((line + word).length > 48) {
-          console.log(`│ MSG:  %-48s │`, line.trim());
-          line = '';
-        }
-        line += word + ' ';
-      }
-      if (line) {
-        console.log(`│ MSG:  %-48s │`, line.trim());
-      }
-      
-      console.log('└────────────────────────────────────────────────────────┘\n');
+      this.simulateSms(cleanTo, body);
     }
   }
 
@@ -255,8 +263,12 @@ class NotificationService {
       if (testUrl) {
         console.log(`🔗 [DEVELOPER MAILBOX] View sent confirmation HTML email: ${testUrl}`);
       }
-    } catch (err) {
-      console.error('❌ Failed to send booking confirmation email:', err);
+    } catch (err: any) {
+      if (err.responseCode === 550) {
+        console.warn(`⚠️ Confirmation email blocked (Resend Sandbox/Domain Limit) for ${clientEmail}.`);
+      } else {
+        console.error('❌ Failed to send booking confirmation email:', err.message || err);
+      }
     }
 
     // Send SMS
@@ -374,8 +386,12 @@ class NotificationService {
       if (testUrl) {
         console.log(`🔗 [DEVELOPER MAILBOX] View sent cancellation HTML email: ${testUrl}`);
       }
-    } catch (err) {
-      console.error('❌ Failed to send booking cancellation email:', err);
+    } catch (err: any) {
+      if (err.responseCode === 550) {
+        console.warn(`⚠️ Cancellation email blocked (Resend Sandbox/Domain Limit) for ${clientEmail}.`);
+      } else {
+        console.error('❌ Failed to send booking cancellation email:', err.message || err);
+      }
     }
 
     // Send SMS
@@ -481,8 +497,12 @@ class NotificationService {
       });
 
       console.log(`✉️ Owner notification email sent to ${ownerEmail}`);
-    } catch (err) {
-      console.error('❌ Failed to send owner booking email:', err);
+    } catch (err: any) {
+      if (err.responseCode === 550) {
+        console.warn(`⚠️ Owner notification email blocked (Resend Sandbox/Domain Limit) for ${ownerEmail}.`);
+      } else {
+        console.error('❌ Failed to send owner booking email:', err.message || err);
+      }
     }
 
     if (ownerPhone) {
@@ -535,8 +555,12 @@ class NotificationService {
         subject: `Booking Accepted! ${serviceName} at ${salonName} on ${dateStr}`,
         html: htmlContent
       });
-    } catch (err) {
-      console.error('❌ Failed to send booking accepted email:', err);
+    } catch (err: any) {
+      if (err.responseCode === 550) {
+        console.warn(`⚠️ Booking accepted email blocked (Resend Sandbox/Domain Limit) for ${clientEmail}.`);
+      } else {
+        console.error('❌ Failed to send booking accepted email:', err.message || err);
+      }
     }
 
     if (clientPhone) {
@@ -585,8 +609,12 @@ class NotificationService {
         subject: `Booking Request Declined: ${serviceName} at ${salonName}`,
         html: htmlContent
       });
-    } catch (err) {
-      console.error('❌ Failed to send booking declined email:', err);
+    } catch (err: any) {
+      if (err.responseCode === 550) {
+        console.warn(`⚠️ Booking declined email blocked (Resend Sandbox/Domain Limit) for ${clientEmail}.`);
+      } else {
+        console.error('❌ Failed to send booking declined email:', err.message || err);
+      }
     }
 
     if (clientPhone) {

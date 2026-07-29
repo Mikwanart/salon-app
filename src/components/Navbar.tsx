@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth0 } from '@auth0/auth0-react';
 import { updateAppointment } from '../lib/api';
-import { Scissors, User, LogOut, Sun, Moon, Bell, LayoutDashboard, X, CheckCheck, ShieldCheck, ChevronRight, ArrowRight } from 'lucide-react';
+import { Scissors, User, Sun, Moon, Bell, LayoutDashboard, X, CheckCheck, ShieldCheck, ChevronRight, ArrowRight } from 'lucide-react';
 import './Navbar.css';
 import './NavbarExtensions.css';
 
@@ -16,17 +16,12 @@ export default function Navbar() {
     const [bellOpen, setBellOpen] = useState(false);
     const bellRef = useRef<HTMLDivElement>(null);
 
-    const { user, isLoggedIn, login, logout, isSalonOwner, isAdmin } = useAuth();
+    const { user, isLoggedIn, login, isSalonOwner, isAdmin } = useAuth();
     const { getAccessTokenSilently } = useAuth0();
     const { showToast } = useToast();
     const { isDark, toggle } = useTheme();
     const { notifications, unreadCount, markAllRead, clearAll, updateNotificationActionStatus } = useNotifications();
     const location = useLocation();
-
-    const handleLogout = () => {
-        logout();
-        showToast('You have been logged out', 'info');
-    };
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -158,9 +153,9 @@ export default function Navbar() {
         <nav className="navbar">
             <div className="navbar-inner container">
                 <Link to="/" className="navbar-brand">
-                    <span className="brand-icon">
-                        <Scissors size={24} />
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', background: 'var(--primary)', color: '#fff', borderRadius: '10px' }}>
+                        <Scissors size={20} style={{ transform: 'rotate(-45deg)' }} />
+                    </div>
                     <span className="brand-text">SalonBook</span>
                 </Link>
 
@@ -172,12 +167,7 @@ export default function Navbar() {
                     >
                         Find Services
                     </Link>
-                    <Link
-                        to="/for-salons"
-                        className={`nav-link ${isActive('/for-salons') ? 'active' : ''}`}
-                    >
-                        For Salons
-                    </Link>
+
                     <Link
                         to="/about"
                         className={`nav-link ${isActive('/about') ? 'active' : ''}`}
@@ -225,10 +215,6 @@ export default function Navbar() {
                                     <ShieldCheck size={18} />
                                 </Link>
                             )}
-                            <button onClick={handleLogout} className="nav-login">
-                                <LogOut size={18} />
-                                <span>Logout</span>
-                            </button>
                         </div>
                     ) : (
                         <>
@@ -324,10 +310,7 @@ export default function Navbar() {
 
                         {/* Business / Account Card */}
                         <div className="fresha-card">
-                            <Link to="/for-salons" className="fresha-row font-medium" onClick={() => setMenuOpen(false)}>
-                                <span>For businesses</span>
-                                <ArrowRight size={22} className="fresha-arrow" />
-                            </Link>
+
 
                             {isLoggedIn && isSalonOwner && (
                                 <Link to="/dashboard" className="fresha-row font-medium" onClick={() => setMenuOpen(false)}>
@@ -343,12 +326,6 @@ export default function Navbar() {
                                 </Link>
                             )}
 
-                            {isLoggedIn && (
-                                <button className="fresha-row font-medium text-danger" onClick={() => { setMenuOpen(false); handleLogout(); }}>
-                                    <span>Log out</span>
-                                    <ArrowRight size={22} className="fresha-arrow" />
-                                </button>
-                            )}
                         </div>
                     </div>
                 </div>,

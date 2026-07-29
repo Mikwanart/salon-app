@@ -4,15 +4,21 @@ import './ServiceCard.css';
 
 interface Props {
     service: Service;
+    salonId?: string;
 }
 
-export default function ServiceCard({ service }: Props) {
+export default function ServiceCard({ service, salonId }: Props) {
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-        e.currentTarget.src = 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&q=60&w=400'; // Generic beauty fallback
+        e.currentTarget.src = 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=60&w=400'; // African beauty fallback
     };
 
+    const serviceParam = service.id || encodeURIComponent(service.name);
+    const bookingUrl = salonId
+        ? `/booking?salon=${salonId}&service=${serviceParam}`
+        : `/booking?service=${serviceParam}`;
+
     return (
-        <Link to={`/services`} className="service-card">
+        <Link to={bookingUrl} className="service-card">
             <div className="service-card-image">
                 <img
                     src={service.image}
@@ -23,7 +29,7 @@ export default function ServiceCard({ service }: Props) {
             </div>
             <div className="service-card-body">
                 <h4>{service.name}</h4>
-                <p className="service-price">from ${service.price}</p>
+                <p className="service-price">GH₵{service.price}</p>
             </div>
         </Link>
     );

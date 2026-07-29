@@ -85,8 +85,9 @@ export default function SalonDetail() {
     if (isLoading) {
         return (
             <main className="salon-detail-page">
-                <div className="container section" style={{ textAlign: 'center' }}>
-                    <h2>Loading...</h2>
+                <div className="global-loading-wrap">
+                    <div className="global-spinner"></div>
+                    <span className="global-loading-text">Loading salon details...</span>
                 </div>
             </main>
         );
@@ -143,7 +144,7 @@ export default function SalonDetail() {
                                         <p className="detail-service-meta">{s.duration} • {s.category}</p>
                                     </div>
                                     <div className="detail-service-right">
-                                        <span className="detail-service-price">${s.price}</span>
+                                        <span className="detail-service-price">GH₵{s.price}</span>
                                         <Link
                                             to={`/booking?salon=${salon.id}&service=${s.id}`}
                                             className="btn btn-primary btn-sm"

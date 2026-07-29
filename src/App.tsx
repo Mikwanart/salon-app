@@ -23,12 +23,20 @@ function RouteScrollRestorer() {
   return null;
 }
 
-function AppContent() {
+function MainLayout() {
   const { isEmailVerified } = useAuth();
+  const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin');
+  const isDashboardPage = location.pathname.startsWith('/dashboard');
+  const isProfilePage = location.pathname.startsWith('/profile');
+  const hideNavFooter = isAdminPage || isDashboardPage || isProfilePage;
 
   return (
     <>
-      {!isEmailVerified && (
+      <RouteScrollRestorer />
+      {!hideNavFooter && <Navbar />}
+      <ScrollToTop />
+      {!isEmailVerified && !hideNavFooter && (
         <div style={{ background: '#fff3cd', color: '#856404', padding: '10px 16px', textAlign: 'center', fontSize: '0.875rem', fontWeight: 500 }}>
           ⚠️ Please verify your email address to get full features. Check your inbox for the verification link.
         </div>
@@ -45,6 +53,7 @@ function AppContent() {
         <Route path="/admin" element={<RoleProtectedRoute role="admin"><AdminDashboard /></RoleProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {!hideNavFooter && <Footer />}
     </>
   );
 }
@@ -52,11 +61,7 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <RouteScrollRestorer />
-      <Navbar />
-      <ScrollToTop />
-      <AppContent />
-      <Footer />
+      <MainLayout />
     </BrowserRouter>
   );
 }

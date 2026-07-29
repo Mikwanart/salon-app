@@ -57,9 +57,14 @@ export const getSalons = async (req: Request, res: Response) => {
       prisma.salon.count({ where: whereClause }),
     ]);
 
+    // Only auto-seed when the DB is completely empty (first run only)
     if (total === 0 && !search) {
       console.log('🌱 Database empty. Auto-seeding initial salons...');
-      await autoSeedSalons();
+      try {
+        await autoSeedSalons();
+      } catch (seedErr) {
+        console.error('Auto-seed failed (non-fatal):', seedErr);
+      }
       [salons, total] = await Promise.all([
         prisma.salon.findMany({
           where: whereClause,
@@ -202,8 +207,8 @@ export const getSalonOwnerAppointments = async (req: Request, res: Response): Pr
         where: { salonId: { in: salonIds } },
         include: {
           client:  { select: { id: true, name: true, email: true, phone: true } },
-          salon:   { select: { id: true, name: true } },
-          service: { select: { id: true, name: true, price: true, duration: true, category: true } },
+          salon:   { select: { id: true, name: true, image: true } },
+          service: { select: { id: true, name: true, price: true, duration: true, category: true, image: true } },
           stylist: { select: { id: true, name: true, role: true } },
         },
         orderBy: { date: 'desc' },
