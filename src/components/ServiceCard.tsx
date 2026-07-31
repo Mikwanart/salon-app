@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Scissors, Sparkles, Droplet, Brush, Star } from 'lucide-react';
 import type { Service } from '../data';
 import './ServiceCard.css';
 
@@ -9,7 +10,7 @@ interface Props {
 
 export default function ServiceCard({ service, salonId }: Props) {
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-        e.currentTarget.src = 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=60&w=400'; // African beauty fallback
+        e.currentTarget.style.display = 'none';
     };
 
     const serviceParam = service.id || encodeURIComponent(service.name);
@@ -19,13 +20,25 @@ export default function ServiceCard({ service, salonId }: Props) {
 
     return (
         <Link to={bookingUrl} className="service-card">
-            <div className="service-card-image">
-                <img
-                    src={service.image}
-                    alt={service.name}
-                    onError={handleImageError}
-                />
-                <span className="badge badge-primary service-badge">{service.category}</span>
+            <div className="service-card-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface-variant, #f0f0f0)' }}>
+                {service.image ? (
+                    <img
+                        src={service.image}
+                        alt={service.name}
+                        onError={handleImageError}
+                    />
+                ) : (
+                    (() => {
+                        const cat = service.category?.toLowerCase() || '';
+                        let Icon = Star;
+                        if (cat.includes('hair') || cat.includes('barber')) Icon = Scissors;
+                        else if (cat.includes('nail')) Icon = Sparkles;
+                        else if (cat.includes('skin')) Icon = Droplet;
+                        else if (cat.includes('makeup')) Icon = Brush;
+                        
+                        return <Icon size={48} color="var(--primary-color, #c19b76)" />;
+                    })()
+                )}
             </div>
             <div className="service-card-body">
                 <h4>{service.name}</h4>

@@ -133,60 +133,6 @@ export default function SalonDetail() {
                         <p>{salon.description}</p>
                     </section>
 
-                    {/* Services */}
-                    <section className="detail-section">
-                        <h3>Services</h3>
-                        <div className="detail-services-list">
-                            {salon.services.map((s) => (
-                                <div key={s.id} className="detail-service-item">
-                                    <div>
-                                        <h4>{s.name}</h4>
-                                        <p className="detail-service-meta">{s.duration} • {s.category}</p>
-                                    </div>
-                                    <div className="detail-service-right">
-                                        <span className="detail-service-price">GH₵{s.price}</span>
-                                        <Link
-                                            to={`/booking?salon=${salon.id}&service=${s.id}`}
-                                            className="btn btn-primary btn-sm"
-                                        >
-                                            Book
-                                        </Link>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Stylists */}
-                    <section className="detail-section">
-                        <h3>Our Stylists</h3>
-                        <div className="detail-stylists-grid">
-                            {salon.stylists.map((st) => (
-                                <div key={st.id} className="stylist-card">
-                                    <div className="stylist-avatar">
-                                        {st.image ? (
-                                            <img src={st.image} alt={st.name} />
-                                        ) : (
-                                            st.name.charAt(0)
-                                        )}
-                                    </div>
-                                    <h4>{st.name}</h4>
-                                    <p className="stylist-role">{st.role}</p>
-                                    <p className="stylist-rating">
-                                        <Star size={14} fill="currentColor" /> {st.rating}
-                                    </p>
-                                    <div className="stylist-tags">
-                                        {st.specialties.map((sp) => (
-                                            <span key={sp} className="badge badge-primary">
-                                                {sp}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
                     {/* Reviews */}
                     <section className="detail-section">
                         <h3>Reviews ({allReviews.length})</h3>

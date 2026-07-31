@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 /* ===== Design Tokens ===== */
 :root {
@@ -24,7 +24,61 @@
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --max-width: 1200px;
   --nav-height: 72px;
-  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --font: 'Manrope', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Theme tokens from design */
+  --primary: #b10e6b;
+  --secondary: #715760;
+  --bg: #fff8f8;
+  --surface: #fff8f8;
+  --outline: #8b7079;
+  --surface-variant: #f5dce3;
+  --on-primary: #ffffff;
+  --inverse-on-surface: #ffecf1;
+  --on-primary-fixed: #3e0022;
+  --on-secondary-fixed: #29161d;
+  --on-background: #25181d;
+  --on-primary-fixed-variant: #8c0053;
+  --error-rose: #e11d48;
+  --surface-container-lowest: #ffffff;
+  --surface-bright: #fff8f8;
+  --secondary-fixed: #fcdae4;
+  --background-light: #fff1f2;
+  --on-surface-variant: #574048;
+  --inverse-surface: #3b2c31;
+  --surface-dim: #ecd4db;
+  --surface-tint: #b4136d;
+  --surface-card: #ffffff;
+  --on-tertiary: #ffffff;
+  --on-secondary-container: #765b64;
+  --on-error: #ffffff;
+  --status-confirmed: #ec48991a;
+  --secondary-fixed-dim: #dfbec8;
+  --error-container: #ffdad6;
+  --on-tertiary-fixed-variant: #0d5300;
+  --on-error-container: #93000a;
+  --surface-container-highest: #f5dce3;
+  --tertiary: #136b00;
+  --primary-fixed-dim: #ffb0cd;
+  --surface-container: #ffe8ee;
+  --error: #ba1a1a;
+  --primary-fixed: #ffd9e4;
+  --surface-container-high: #fbe2e9;
+  --tertiary-fixed: #84fd64;
+  --primary-container: #d23284;
+  --on-secondary: #ffffff;
+  --on-primary-container: #fffbff;
+  --surface-container-low: #fff0f3;
+  --tertiary-container: #1b8700;
+  --on-tertiary-fixed: #022100;
+  --on-surface: #25181d;
+  --outline-variant: #debec8;
+  --on-secondary-fixed-variant: #584048;
+  --background-dark: #1a0b12;
+  --tertiary-fixed-dim: #68e04b;
+  --inverse-primary: #ffb0cd;
+  --secondary-container: #fad7e1;
+  --on-tertiary-container: #f8ffef;
 }
 
 /* ===== Dark Mode ===== */

@@ -1,225 +1,380 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Store, MapPin, Phone, Lock, Upload, Users, Calendar, TrendingUp } from 'lucide-react';
 import { registerSalon } from '../lib/api';
-import { TrendingUp, Calendar, Star, Shield, BarChart2, Users } from 'lucide-react';
 import './ForSalons.css';
 
-const features = [
-    {
-        icon: <Calendar size={28} />,
-        title: 'Smart Scheduling',
-        desc: 'Let clients book online 24/7. Automated reminders cut no-shows by up to 60%.',
-    },
-    {
-        icon: <BarChart2 size={28} />,
-        title: 'Business Analytics',
-        desc: 'Real-time dashboards showing revenue, top services, and peak booking hours.',
-    },
-    {
-        icon: <Users size={28} />,
-        title: 'Client Management',
-        desc: 'Keep full client history, preferences, and contact info in one place.',
-    },
-    {
-        icon: <Star size={28} />,
-        title: 'Reviews & Reputation',
-        desc: 'Collect verified reviews automatically after each appointment.',
-    },
-    {
-        icon: <TrendingUp size={28} />,
-        title: 'Grow Your Reach',
-        desc: 'Get listed in our discovery feed and reach thousands of new clients monthly.',
-    },
-    {
-        icon: <Shield size={28} />,
-        title: 'Secure Payments',
-        desc: 'Accept deposits and payments online. Stripe-powered, fully encrypted.',
-    },
-];
-
-const plans = [
-    {
-        name: 'Starter',
-        price: 'Free',
-        period: '',
-        features: ['Up to 2 stylists', 'Online booking page', 'Basic analytics', 'Email reminders'],
-        cta: 'Get Started',
-        highlight: false,
-    },
-    {
-        name: 'Pro',
-        price: '$49',
-        period: '/ month',
-        features: ['Unlimited stylists', 'Priority listing', 'Advanced analytics', 'SMS reminders', 'Review management'],
-        cta: 'Start Free Trial',
-        highlight: true,
-    },
-    {
-        name: 'Enterprise',
-        price: 'Custom',
-        period: '',
-        features: ['Multi-location support', 'Dedicated success manager', 'Custom integrations', 'White-label option'],
-        cta: 'Contact Sales',
-        highlight: false,
-    },
-];
+const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            } else {
+                reject(new Error('Canvas context failed'));
+            }
+        };
+        img.onerror = (err) => reject(err);
+        img.src = URL.createObjectURL(file);
+    });
+};
 
 export default function ForSalons() {
-    const { isLoggedIn, login, isSalonOwner } = useAuth();
-    const { getAccessTokenSilently } = useAuth0();
-    const [isRegistering, setIsRegistering] = useState(false);
+    const { isAuthenticated, getAccessTokenSilently, loginWithPopup } = useAuth0();
+    const navigate = useNavigate();
+    
+    const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formData, setFormData] = useState({ name: '', address: '', city: '', state: '', phone: '', email: '' });
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [formData, setFormData] = useState({ 
+        name: '', 
+        tagline: '', 
+        story: '', 
+        address: '', 
+        city: '', 
+        state: '', 
+        phone: '' 
+    });
 
-    const handleRegister = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            const token = await getAccessTokenSilently();
-            await registerSalon(token, formData);
-            window.location.href = '/dashboard'; // Force full reload to resync user role
-        } catch(e) {
-            console.error('Registration failed', e);
-            alert('Failed to register salon. Please try again.');
-        } finally {
-            setIsSubmitting(false);
+        
+        if (step === 1) {
+            if (!formData.name) {
+                alert('Please enter a salon name');
+                return;
+            }
+            setStep(2);
+        } else if (step === 2) {
+            if (!formData.address || !formData.city || !formData.state || !formData.phone) {
+                alert('Please fill out all location fields');
+                return;
+            }
+            setStep(3);
+        } else if (step === 3) {
+            if (!isAuthenticated) {
+                try {
+                    await loginWithPopup();
+                } catch (err) {
+                    console.error("Popup login failed", err);
+                    alert("Login popup was blocked or failed. Please try again or allow popups.");
+                    return;
+                }
+            }
+
+            setIsSubmitting(true);
+            try {
+                let imageUrl: string | undefined = undefined;
+                if (logoFile) {
+                    imageUrl = await compressImage(logoFile).catch((err) => {
+                        console.warn('Image compression failed, using fallback reader:', err);
+                        return new Promise<string>((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.onerror = (err) => reject(err);
+                            reader.readAsDataURL(logoFile);
+                        });
+                    }).catch(() => undefined);
+                }
+
+                const token = await getAccessTokenSilently();
+                await registerSalon(token, { ...formData, image: imageUrl });
+                window.location.href = '/dashboard'; 
+            } catch(e) {
+                console.error('Registration failed', e);
+                alert('Failed to register salon. Please try again.');
+            } finally {
+                setIsSubmitting(false);
+            }
         }
     };
 
     return (
-        <main className="for-salons-page">
-            {/* Hero */}
-            <section className="fs-hero">
-                <div className="container fs-hero-inner">
-                    <div className="fs-hero-text">
-                        <span className="fs-badge">For Salon Owners</span>
-                        <h1>Grow your salon with <em>SalonBook</em></h1>
-                        <p>The all-in-one platform to manage bookings, wow clients, and grow your business — starting free.</p>
-                        <div className="fs-hero-actions">
-                            {!isRegistering ? (
-                                <>
-                                    {!isLoggedIn ? (
-                                        <button onClick={() => login()} className="btn btn-primary">Get Started Free</button>
-                                    ) : (
-                                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                            <button onClick={() => setIsRegistering(true)} className="btn btn-primary">Create Your Salon</button>
-                                            {isSalonOwner && <Link to="/dashboard" className="btn btn-outline">Go to Dashboard</Link>}
-                                        </div>
-                                    )}
-                                    <a href="#features" className="btn btn-outline">See Features →</a>
-                                </>
-                            ) : (
-                                <form onSubmit={handleRegister} className="fs-reg-form fade-in">
-                                    <h3>Register Your Salon</h3>
-                                    
-                                    <div className="form-group" style={{ marginBottom: 16 }}>
-                                        <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Salon Name</label>
-                                        <input type="text" className="fs-reg-input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
-                                    </div>
-                                    
-                                    <div className="form-group" style={{ marginBottom: 16 }}>
-                                        <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Phone Number</label>
-                                        <input type="tel" className="fs-reg-input" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required />
-                                    </div>
-                                    
-                                    <div className="form-group" style={{ marginBottom: 16 }}>
-                                        <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Street Address</label>
-                                        <input type="text" className="fs-reg-input" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} required />
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-                                        <div className="form-group" style={{ flex: 1 }}>
-                                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>City</label>
-                                            <input type="text" className="fs-reg-input" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} required />
-                                        </div>
-                                        <div className="form-group" style={{ flex: 1 }}>
-                                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Region</label>
-                                            <input type="text" className="fs-reg-input" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} required />
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', gap: 12 }}>
-                                        <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isSubmitting}>{isSubmitting ? 'Registering...' : 'Complete Registration'}</button>
-                                        <button type="button" className="btn btn-outline" onClick={() => setIsRegistering(false)}>Cancel</button>
-                                    </div>
-                                </form>
-                            )}
+        <main className="velvet-signup-page">
+            <div className="velvet-container">
+                {/* Multi-Step Progress Indicator */}
+                <div className="velvet-progress-wrapper">
+                    <div className="velvet-progress-track">
+                        <div className="velvet-progress-line" style={{ width: step === 1 ? '33%' : step === 2 ? '66%' : '100%' }}></div>
+                    </div>
+                    
+                    <div className="velvet-step-items">
+                        <div className="velvet-step-item">
+                            <div className={`velvet-step-circle ${step >= 1 ? 'active' : ''}`}>1</div>
+                            <span className={`velvet-step-label ${step >= 1 ? 'active' : ''}`}>Brand</span>
+                        </div>
+                        <div className="velvet-step-item">
+                            <div className={`velvet-step-circle ${step >= 2 ? 'active' : ''}`}>2</div>
+                            <span className={`velvet-step-label ${step >= 2 ? 'active' : ''}`}>Location</span>
+                        </div>
+                        <div className="velvet-step-item">
+                            <div className={`velvet-step-circle ${step >= 3 ? 'active' : ''}`}>3</div>
+                            <span className={`velvet-step-label ${step >= 3 ? 'active' : ''}`}>Services</span>
                         </div>
                     </div>
-
-                    <div className="fs-hero-stats">
-                        <div className="fs-stat"><span className="fs-stat-val">12,000+</span><span>Salons</span></div>
-                        <div className="fs-stat"><span className="fs-stat-val">4.9★</span><span>Avg Rating</span></div>
-                        <div className="fs-stat"><span className="fs-stat-val">2M+</span><span>Bookings/mo</span></div>
-                    </div>
                 </div>
-            </section>
 
-            {/* Features */}
-            <section className="section" id="features">
-                <div className="container">
-                    <div className="section-header" style={{ textAlign: 'center' }}>
-                        <h2>Everything you need to run a modern salon</h2>
-                        <p>Powerful tools, beautifully simple to use.</p>
-                    </div>
-                    <div className="fs-features-grid">
-                        {features.map((f) => (
-                            <div key={f.title} className="fs-feature-card">
-                                <div className="fs-feature-icon">{f.icon}</div>
-                                <h4>{f.title}</h4>
-                                <p>{f.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Pricing */}
-            <section className="section fs-pricing-section">
-                <div className="container">
-                    <div className="section-header" style={{ textAlign: 'center' }}>
-                        <h2>Simple, transparent pricing</h2>
-                        <p>No setup fees. No hidden costs. Cancel anytime.</p>
-                    </div>
-                    <div className="fs-plans-grid">
-                        {plans.map((plan) => (
-                            <div key={plan.name} className={`fs-plan-card ${plan.highlight ? 'highlight' : ''}`}>
-                                {plan.highlight && <span className="fs-popular-badge">Most Popular</span>}
-                                <h3>{plan.name}</h3>
-                                <div className="fs-price">
-                                    <span className="fs-price-val">{plan.price}</span>
-                                    <span className="fs-price-period">{plan.period}</span>
+                <div className="velvet-grid">
+                    {/* Main Form Card */}
+                    <div className="velvet-form-card">
+                        <div className="velvet-form-header">
+                            <h1>{step === 1 ? 'Build Your Identity' : step === 2 ? 'Set Your Location' : 'Ready to Launch'}</h1>
+                            <p>
+                                {step === 1 && 'Introduce your salon to the world. This information will be visible to your future clients.'}
+                                {step === 2 && 'Where can clients find you? Enter your physical address and contact details.'}
+                                {step === 3 && 'Review your details and finalize your registration to access your dashboard.'}
+                            </p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="velvet-form">
+                            {step === 1 && (
+                                <div className="velvet-step-content fade-in">
+                                    <div className="velvet-form-row">
+                                        <div className="velvet-input-group">
+                                            <label>Salon Name</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="e.g., Velvet Rose Studio" 
+                                                value={formData.name}
+                                                onChange={e => setFormData({...formData, name: e.target.value})}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="velvet-input-group">
+                                            <label>Tagline</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="e.g., Luxury hair and skin care" 
+                                                value={formData.tagline}
+                                                onChange={e => setFormData({...formData, tagline: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="velvet-input-group">
+                                        <label>The Salon Story</label>
+                                        <textarea 
+                                            placeholder="Share the heritage and mission of your salon..." 
+                                            rows={4}
+                                            value={formData.story}
+                                            onChange={e => setFormData({...formData, story: e.target.value})}
+                                        ></textarea>
+                                    </div>
+                                    
+                                    <div className="velvet-input-group">
+                                        <label>Brand Logo</label>
+                                        <div className="velvet-file-upload">
+                                            <Upload className="upload-icon" size={32} style={{ color: 'var(--velvet-primary)', marginBottom: '0.5rem' }} />
+                                            <p className="upload-title">{logoFile ? 'Change logo' : 'Click to upload logo'}</p>
+                                            <p className="upload-subtitle">{logoFile ? logoFile.name : 'SVG, PNG, or JPG (Max. 2MB)'}</p>
+                                            <input 
+                                                type="file" 
+                                                className="file-input" 
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    if (e.target.files && e.target.files[0]) {
+                                                        setLogoFile(e.target.files[0]);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <ul className="fs-plan-features">
-                                    {plan.features.map((feat) => (
-                                        <li key={feat}>✓ {feat}</li>
-                                    ))}
-                                </ul>
-                                <button onClick={() => !isLoggedIn ? login() : setIsRegistering(true)} className={`btn ${plan.highlight ? 'btn-primary' : 'btn-outline'} fs-plan-btn`}>
-                                    {plan.cta}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                            )}
 
-            {/* CTA */}
-            <section className="fs-cta-section">
-                <div className="container fs-cta-inner">
-                    <h2>Ready to transform your salon?</h2>
-                    <p>Join thousands of salon owners who trust SalonBook to run their business.</p>
-                    {!isLoggedIn ? (
-                        <button onClick={() => login()} className="btn btn-primary">Create Free Account</button>
-                    ) : isSalonOwner ? (
-                        <Link to="/dashboard" className="btn btn-primary">Go to Dashboard</Link>
-                    ) : (
-                        <button onClick={() => { setIsRegistering(true); window.scrollTo(0,0); }} className="btn btn-primary">Create Your Salon</button>
-                    )}
+                            {step === 2 && (
+                                <div className="velvet-step-content fade-in">
+                                    <div className="velvet-input-group">
+                                        <label>Street Address</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="e.g., 123 Main Street" 
+                                            value={formData.address}
+                                            onChange={e => setFormData({...formData, address: e.target.value})}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="velvet-form-row">
+                                        <div className="velvet-input-group">
+                                            <label>City</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="e.g., Accra" 
+                                                value={formData.city}
+                                                onChange={e => setFormData({...formData, city: e.target.value})}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="velvet-input-group">
+                                            <label>Region</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="e.g., Greater Accra" 
+                                                value={formData.state}
+                                                onChange={e => setFormData({...formData, state: e.target.value})}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="velvet-input-group">
+                                        <label>Phone Number</label>
+                                        <input 
+                                            type="tel" 
+                                            placeholder="e.g., +1 234 567 8900" 
+                                            value={formData.phone}
+                                            onChange={e => setFormData({...formData, phone: e.target.value})}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 3 && (
+                                <div className="velvet-step-content fade-in">
+                                    <div className="velvet-summary-card">
+                                        <div className="summary-header">
+                                            <div className="summary-icon-preview">
+                                                {logoFile ? (
+                                                    <img src={URL.createObjectURL(logoFile)} alt="Salon Logo" />
+                                                ) : (
+                                                    <Store size={32} />
+                                                )}
+                                            </div>
+                                            <div className="summary-title-block">
+                                                <span className="summary-badge">Ready to Launch</span>
+                                                <h2 className="summary-title">{formData.name || 'Your Salon'}</h2>
+                                                {formData.tagline && <p className="summary-tagline">"{formData.tagline}"</p>}
+                                            </div>
+                                        </div>
+
+                                        <div className="summary-details-grid">
+                                            <div className="summary-detail-item">
+                                                <div className="summary-item-icon">
+                                                    <MapPin size={18} />
+                                                </div>
+                                                <div className="summary-item-content">
+                                                    <span className="summary-item-label">Location</span>
+                                                    <span className="summary-item-value">{formData.address}, {formData.city}, {formData.state}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="summary-detail-item">
+                                                <div className="summary-item-icon">
+                                                    <Phone size={18} />
+                                                </div>
+                                                <div className="summary-item-content">
+                                                    <span className="summary-item-label">Contact Phone</span>
+                                                    <span className="summary-item-value">{formData.phone || 'Not provided'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {!isAuthenticated && (
+                                        <div className="velvet-auth-warning">
+                                            <Lock size={20} style={{ flexShrink: 0 }} />
+                                            <p>Almost there! We'll just need you to log in or create an account to securely save your salon profile.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="velvet-form-actions">
+                                <button 
+                                    type="button" 
+                                    className="velvet-btn-text" 
+                                    onClick={() => navigate('/dashboard')}
+                                >
+                                    Cancel
+                                </button>
+                                
+                                <div className="velvet-actions-right">
+                                    {step > 1 && (
+                                        <button type="button" className="velvet-btn-secondary" onClick={() => setStep(step - 1)}>
+                                            Back
+                                        </button>
+                                    )}
+                                    {step < 3 ? (
+                                        <button type="submit" className="velvet-btn-primary">
+                                            Continue
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            type="submit" 
+                                            className="velvet-btn-primary shadow-glow" 
+                                            disabled={isSubmitting}
+                                        >
+                                            {isSubmitting ? 'Registering...' : (!isAuthenticated ? 'Log in & Complete' : 'Complete Registration')}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Sidebar: Benefits & Visuals */}
+                    <aside className="velvet-sidebar">
+                        <div className="velvet-visual-card group">
+                            <img 
+                                src="/images/register-salon-inspiration.jpg" 
+                                alt="Salon Inspiration" 
+                            />
+                            <div className="velvet-visual-overlay"></div>
+                            <div className="velvet-visual-text">
+                                <p className="subtitle">INSPIRATION</p>
+                                <p className="title">Crafting the future of beauty management.</p>
+                            </div>
+                        </div>
+
+                        <div className="velvet-benefits-card">
+                            <h3>Why register with us</h3>
+                            <ul>
+                                <li>
+                                    <div className="icon-wrapper">
+                                        <Users size={18} />
+                                    </div>
+                                    <div className="content">
+                                        <h4>Reach More Clients</h4>
+                                        <p>Gain visibility in our exclusive marketplace of wellness enthusiasts.</p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div className="icon-wrapper">
+                                        <Calendar size={18} />
+                                    </div>
+                                    <div className="content">
+                                        <h4>Seamless Booking</h4>
+                                        <p>Automated scheduling and reminders to reduce no-shows by 40%.</p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div className="icon-wrapper">
+                                        <TrendingUp size={18} />
+                                    </div>
+                                    <div className="content">
+                                        <h4>Revenue Growth</h4>
+                                        <p>Smart analytics and upsell tools designed for beauty experts.</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </aside>
                 </div>
-            </section>
+            </div>
         </main>
     );
 }

@@ -112,12 +112,12 @@ async function main() {
           },
           stylists: {
             create: [
-              { name: 'Akosua Pokuaa', role: 'Master Braider & Loc Specialist', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Knotless Braids', 'Fulani Braids', 'Goddess Locs'] },
-              { name: 'Ama Serwaa', role: 'Nail & Ankara Artist', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Ankara Art', 'Gel Extensions', 'Spa Pedicures'] },
-              { name: 'Abena Osei', role: 'Melanin Skincare Specialist', image: 'https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Shea Butter Facials', 'Melanin Glow', 'Chemical Peels'] },
-              { name: 'Yaa Asantewaa', role: 'Afro Glam & Gele Styling Artist', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Gele Styling', 'Bridal Glam', 'Editorial Beats'] },
-              { name: 'Kofi Boakye', role: 'Barbering & Afro Precision Cut Specialist', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Afro Fade', 'Sharp Line-up', 'Beard Grooming'] },
-              { name: 'Adwoa Kyei', role: 'Wig Customization & Silk Press Specialist', image: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Wig Melt', 'Silk Press', 'Frontal Customization'] }
+              { name: 'Akosua Pokuaa', role: 'Master Braider & Loc Specialist', image: '/stylists/2CzySFQXCn7b9cwTICoc_.jpg', rating: 4.9, specialties: ['Knotless Braids', 'Fulani Braids', 'Goddess Locs'] },
+              { name: 'Ama Serwaa', role: 'Nail & Ankara Artist', image: '/stylists/LlcsU7WHjgJpAlru3401_.jpg', rating: 4.8, specialties: ['Ankara Art', 'Gel Extensions', 'Spa Pedicures'] },
+              { name: 'Abena Osei', role: 'Melanin Skincare Specialist', image: '/stylists/OgRb8FZ4e4Gk_P9-oI6NK.jpg', rating: 4.9, specialties: ['Shea Butter Facials', 'Melanin Glow', 'Chemical Peels'] },
+              { name: 'Yaa Asantewaa', role: 'Afro Glam & Gele Styling Artist', image: '/stylists/Photo by Horci via Iwaria.jpg', rating: 4.8, specialties: ['Gele Styling', 'Bridal Glam', 'Editorial Beats'] },
+              { name: 'Kofi Boakye', role: 'Barbering & Afro Precision Cut Specialist', image: '/stylists/Photo by Kelvin Smile via Iwaria.jpg', rating: 4.9, specialties: ['Afro Fade', 'Sharp Line-up', 'Beard Grooming'] },
+              { name: 'Adwoa Kyei', role: 'Wig Customization & Silk Press Specialist', image: '', rating: 4.9, specialties: ['Wig Melt', 'Silk Press', 'Frontal Customization'] }
             ]
           }
         }

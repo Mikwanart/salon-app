@@ -79,6 +79,16 @@
     padding: 12px 28px;
     border-radius: var(--radius-full);
     flex-shrink: 0;
+    background-color: #b10e6b;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background-color 0.2s ease;
+}
+
+.search-btn:hover {
+    background-color: #960b5a;
 }
 
 @media (max-width: 640px) {

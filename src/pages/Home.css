@@ -28,6 +28,10 @@ section.hero {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+.hero-content .search-bar {
+    margin-top: 36px;
+}
+
 .hero-tagline {
     font-size: 0.85rem;
     font-weight: 700;

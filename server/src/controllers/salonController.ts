@@ -424,7 +424,7 @@ export const registerSalon = async (req: Request, res: Response): Promise<void> 
       return; 
     }
 
-    const { name, address, city, state, phone, email } = req.body;
+    const { name, address, city, state, phone, email, image, coverImage } = req.body;
     if (!name || !address || !city || !state) {
       console.log('Register failed: Missing required fields', req.body);
       res.status(400).json({ error: 'Missing required fields: name, address, city, and state are required.' });
@@ -442,6 +442,7 @@ export const registerSalon = async (req: Request, res: Response): Promise<void> 
         state,
         phone,
         email,
+        image: image || coverImage || null,
         status: initialStatus,
         ownerId: user.id
       }

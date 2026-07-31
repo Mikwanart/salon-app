@@ -14,7 +14,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
-    login: () => void;
+    login: (options?: any) => void;
     logout: () => void;
     isLoading: boolean;
     roles: string[];
@@ -94,8 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [isAuthenticated, auth0User, getAccessTokenSilently, isLoading]);
 
-    const login = () => {
-        loginWithRedirect();
+    const login = (options?: any) => {
+        loginWithRedirect(options);
     };
 
     const logout = () => {

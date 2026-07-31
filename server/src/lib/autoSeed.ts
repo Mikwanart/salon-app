@@ -165,10 +165,10 @@ export async function autoSeedSalons() {
           services: { create: s.services },
           stylists: {
             create: [
-              { name: 'Akosua Pokuaa', role: 'Master Braider & Loc Specialist', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Knotless Braids', 'Fulani Braids', 'Goddess Locs'] },
-              { name: 'Ama Serwaa', role: 'Nail & Ankara Artist', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Ankara Art', 'Gel Extensions'] },
-              { name: 'Abena Osei', role: 'Melanin Skincare Specialist', image: 'https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=crop&q=80&w=400', rating: 4.9, specialties: ['Shea Butter Facials', 'Melanin Glow'] },
-              { name: 'Yaa Asantewaa', role: 'Afro Glam Artist', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', rating: 4.8, specialties: ['Gele Styling', 'Bridal Glam'] }
+              { name: 'Akosua Pokuaa', role: 'Master Braider & Loc Specialist', image: '/stylists/2CzySFQXCn7b9cwTICoc_.jpg', rating: 4.9, specialties: ['Knotless Braids', 'Fulani Braids', 'Goddess Locs'] },
+              { name: 'Ama Serwaa', role: 'Nail & Ankara Artist', image: '/stylists/LlcsU7WHjgJpAlru3401_.jpg', rating: 4.8, specialties: ['Ankara Art', 'Gel Extensions'] },
+              { name: 'Abena Osei', role: 'Melanin Skincare Specialist', image: '/stylists/OgRb8FZ4e4Gk_P9-oI6NK.jpg', rating: 4.9, specialties: ['Shea Butter Facials', 'Melanin Glow'] },
+              { name: 'Yaa Asantewaa', role: 'Afro Glam Artist', image: '/stylists/Photo by Horci via Iwaria.jpg', rating: 4.8, specialties: ['Gele Styling', 'Bridal Glam'] }
             ]
           }
         }

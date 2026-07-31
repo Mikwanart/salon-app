@@ -7,50 +7,17 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useNotifications } from '../context/NotificationContext';
 import { createAppointment, fetchSalonById, fetchSalons, verifyPaymentStatus, fetchBookedSlots } from '../lib/api';
 
-import SalonMap from '../components/SalonMap';
-import { CheckCircle, Smartphone, CreditCard, Lock, RefreshCw, Printer, AlertCircle } from 'lucide-react';
+import { RefreshCw, Printer, Smartphone } from 'lucide-react';
 import './Booking.css';
 
-const steps = ['Select Service', 'Choose Stylist', 'Date & Time', 'Your Details', 'Payment'];
+// Import new step components
+import BookingServiceStep from './booking/BookingServiceStep';
+import BookingStylistStep from './booking/BookingStylistStep';
+import BookingTimeStep from './booking/BookingTimeStep';
+import BookingReviewStep from './booking/BookingReviewStep';
+import BookingPaymentStep from './booking/BookingPaymentStep';
 
-// Payment method options
-type PaymentMethod = 'momo' | 'card' | 'cash' | '';
-
-interface PaymentOption {
-    id: PaymentMethod;
-    label: string;
-    description: string;
-    icon: string;
-    color: string;
-    bg: string;
-}
-
-const paymentOptions: PaymentOption[] = [
-    {
-        id: 'momo',
-        label: 'MTN MoMo',
-        description: 'Pay with MTN Mobile Money',
-        icon: '📱',
-        color: '#1a1a1a',
-        bg: '#FFD700',
-    },
-    {
-        id: 'card',
-        label: 'Card',
-        description: 'Credit or Debit Card',
-        icon: '💳',
-        color: '#fff',
-        bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    },
-    {
-        id: 'cash',
-        label: 'Cash',
-        description: 'Pay in person at the salon',
-        icon: '💵',
-        color: '#fff',
-        bg: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-    },
-];
+const steps = ['Service', 'Stylist', 'Time', 'Review', 'Payment'];
 
 export default function Booking() {
     const [searchParams] = useSearchParams();
@@ -58,12 +25,12 @@ export default function Booking() {
     const preselectedService = searchParams.get('service') || '';
     
     const [salon, setSalon] = useState<Salon | null>(null);
-    const [allSalonsList, setAllSalonsList] = useState<Salon[]>([]);
     const [isLoadingSalon, setIsLoadingSalon] = useState(true);
 
     const { showToast } = useToast();
     const { user } = useAuth();
     const { addNotification, addNotificationForUser } = useNotifications();
+    
     const [step, setStep] = useState(preselectedService ? 1 : 0);
     const [selectedService, setSelectedService] = useState(preselectedService);
     const [selectedStylist, setSelectedStylist] = useState('');
@@ -72,38 +39,18 @@ export default function Booking() {
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [phone, setPhone] = useState('');
+    
     const [confirmed, setConfirmed] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { getAccessTokenSilently } = useAuth0();
 
-    // Payment state
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('');
-    const [momoPhone, setMomoPhone] = useState('');
-    const [cardNumber, setCardNumber] = useState('');
-    const [cardExpiry, setCardExpiry] = useState('');
-    const [cardCvv, setCardCvv] = useState('');
-    const [cardName, setCardName] = useState('');
-
     // Payment Simulation State
     const [paymentSimulationStep, setPaymentSimulationStep] = useState<'none' | 'momo-prompt' | 'card-otp' | 'processing' | 'success'>('none');
-    const [otpInput, setOtpInput] = useState<string[]>(['', '', '', '', '', '']);
-    const [otpSentCode, setOtpSentCode] = useState<string>('');
-    const [otpShowSms, setOtpShowSms] = useState<boolean>(false);
-    const [otpError, setOtpError] = useState<string>('');
     const [transactionDetails, setTransactionDetails] = useState<any>(null);
-
-    // Refs for OTP input navigation
-    const otpRefs = [
-        useRef<HTMLInputElement>(null),
-        useRef<HTMLInputElement>(null),
-        useRef<HTMLInputElement>(null),
-        useRef<HTMLInputElement>(null),
-        useRef<HTMLInputElement>(null),
-        useRef<HTMLInputElement>(null)
-    ];
 
     // Real MTN MoMo Polling and Countdown States
     const [momoCountdown, setMomoCountdown] = useState<number>(120);
+    const [momoPhone, setMomoPhone] = useState(''); // Used for MoMo prompt UI
     const pollIntervalRef = useRef<any>(null);
     const countdownIntervalRef = useRef<any>(null);
 
@@ -122,23 +69,18 @@ export default function Booking() {
         let attempts = 0;
         const maxAttempts = 40; // 40 attempts * 3s = 120s
 
-        // 1. Polling interval
         pollIntervalRef.current = setInterval(async () => {
             attempts += 1;
-
             if (attempts > maxAttempts) {
                 cleanIntervals();
                 setPaymentSimulationStep('none');
                 showToast('MoMo payment request timed out. Please try again.', 'error');
                 return;
             }
-
             try {
                 const statusResult = await verifyPaymentStatus(appointmentId, token);
-
                 if (statusResult.paymentStatus === 'PAID') {
                     cleanIntervals();
-
                     const bookedService = availableServices.find((s) => s.id === selectedService);
                     const availableStylists = salon?.stylists || stylists;
                     const bookedStylist = availableStylists.find((st) => st.id === selectedStylist);
@@ -159,10 +101,7 @@ export default function Booking() {
                     setPaymentSimulationStep('success');
                     setTimeout(() => {
                         showToast('Booking confirmed! 🎉', 'success');
-                        addNotification(
-                            `Booking confirmed at ${salon?.name} on ${selectedDate} at ${selectedTime}.`,
-                            'success'
-                        );
+                        addNotification(`Booking confirmed at ${salon?.name} on ${selectedDate} at ${selectedTime}.`, 'success');
                         setConfirmed(true);
                         setPaymentSimulationStep('none');
                     }, 1500);
@@ -176,7 +115,6 @@ export default function Booking() {
             }
         }, 3000);
 
-        // 2. Visual countdown interval
         setMomoCountdown(120);
         countdownIntervalRef.current = setInterval(() => {
             setMomoCountdown(prev => {
@@ -190,16 +128,13 @@ export default function Booking() {
         }, 1000);
     };
 
-    const initiateMomoPayment = async () => {
+    const initiateMomoPayment = async (phoneForMomo: string) => {
         setIsSubmitting(true);
-        const phoneForMomo = momoPhone.trim();
-
-        // Extract stylist
+        setMomoPhone(phoneForMomo);
         const availableStylists = salon?.stylists || stylists;
         const bookedStylist = availableStylists.find((st) => st.id === selectedStylist);
 
         try {
-            // Parse time string (e.g. "10:00 AM")
             const timeParts = selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
             let hours = 9;
             let minutes = 0;
@@ -226,10 +161,7 @@ export default function Booking() {
                 paymentDetails: phoneForMomo,
             };
 
-            // Call backend: triggers requestToPay and returns pending transaction record
             const result = await createAppointment(bookingData, token);
-
-            // Open the status polling view
             setPaymentSimulationStep('momo-prompt');
             startMomoPolling(result.id, token);
 
@@ -241,149 +173,15 @@ export default function Booking() {
         }
     };
 
-    useEffect(() => {
-        const loadSalonData = async () => {
-            setIsLoadingSalon(true);
-            try {
-                let mappedSalons: Salon[] = [];
-                try {
-                    const apiSalonsData = await fetchSalons();
-                    if (Array.isArray(apiSalonsData) && apiSalonsData.length > 0) {
-                        mappedSalons = apiSalonsData.map((s: any) => mapApiSalonToFrontendSalon(s, null));
-                    } else {
-                        mappedSalons = fallbackSalons;
-                    }
-                } catch {
-                    mappedSalons = fallbackSalons;
-                }
-                setAllSalonsList(mappedSalons);
-
-                if (salonId) {
-                    const data = await fetchSalonById(salonId);
-                    setSalon(mapApiSalonToFrontendSalon(data));
-                } else if (mappedSalons.length > 0) {
-                    let targetSalon = mappedSalons[0];
-                    if (preselectedService) {
-                        const preselectedLower = preselectedService.toLowerCase();
-                        const found = mappedSalons.find(sl =>
-                            sl.services.some(sv =>
-                                sv.id === preselectedService ||
-                                sv.name.toLowerCase() === preselectedLower
-                            )
-                        );
-                        if (found) targetSalon = found;
-                    }
-                    setSalon(targetSalon);
-                }
-            } catch (err) {
-                console.error("Failed to fetch salon details:", err);
-                if (fallbackSalons.length > 0) {
-                    setSalon(fallbackSalons[0]);
-                }
-            } finally {
-                setIsLoadingSalon(false);
-            }
-        };
-        loadSalonData();
-    }, [salonId, preselectedService]);
-
-    const availableServices = salon?.services.length ? salon.services : allServices.slice(0, 4);
-
-    // Auto-resolve preselectedService (whether ID or Name string) to matching service database ID
-    useEffect(() => {
-        if (!salon) return;
-        const available = salon.services.length ? salon.services : allServices.slice(0, 4);
-
-        if (preselectedService) {
-            const preselectedLower = preselectedService.toLowerCase();
-            const matched = available.find(
-                (s) => s.id === preselectedService || s.name.toLowerCase() === preselectedLower
-            );
-            if (matched) {
-                setSelectedService(matched.id);
-                return;
-            }
-        }
-
-        if (selectedService) {
-            const matched = available.find(
-                (s) => s.id === selectedService || s.name.toLowerCase() === selectedService.toLowerCase()
-            );
-            if (matched) {
-                setSelectedService(matched.id);
-                return;
-            }
-        }
-
-        if (available.length > 0) {
-            setSelectedService(available[0].id);
-        }
-    }, [salon, preselectedService]);
-
-    // Real-time slot availability: fetch booked slots from the DB for the selected salon + date
-    const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-    useEffect(() => {
-        if (!salon?.id || !selectedDate) {
-            setBookedSlots([]);
-            return;
-        }
-        fetchBookedSlots(salon.id, selectedDate)
-            .then(setBookedSlots)
-            .catch(() => setBookedSlots([])); // fail silently — don't block booking
-    }, [salon?.id, selectedDate]);
-
-    const handleNext = () => {
-        if (step === 0 && !selectedService) {
-            showToast('Please select a service to continue.', 'error');
-            return;
-        }
-        if (step === 2 && !selectedDate) {
-            showToast('Please select a date.', 'error');
-            return;
-        }
-        if (step === 2 && !selectedTime) {
-            showToast('Please select a time slot.', 'error');
-            return;
-        }
-        if (step === 3) {
-            if (!name.trim()) {
-                showToast('Please enter your full name.', 'error');
-                return;
-            }
-            if (!email.trim()) {
-                showToast('Please enter your email address.', 'error');
-                return;
-            }
-        }
-        if (step < steps.length - 1) setStep(step + 1);
-    };
-
-    const handleBack = () => {
-        if (step > 0) setStep(step - 1);
-    };
-
-    const formatCardNumber = (val: string) => {
-        const digits = val.replace(/\D/g, '').slice(0, 16);
-        return digits.replace(/(.{4})/g, '$1 ').trim();
-    };
-
-    const formatExpiry = (val: string) => {
-        const digits = val.replace(/\D/g, '').slice(0, 4);
-        if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-        return digits;
-    };
-
     // Helper to perform actual backend appointment creation
     const executeFinalBooking = async (paymentInfo: { method: string; status: string; details: string }) => {
         setIsSubmitting(true);
         setPaymentSimulationStep('processing');
 
-        // Extract stylist
         const availableStylists = salon?.stylists || stylists;
         const bookedStylist = availableStylists.find((st) => st.id === selectedStylist);
 
         try {
-            // Parse time string (e.g. "10:00 AM")
             const timeParts = selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
             let hours = 9;
             let minutes = 0;
@@ -417,7 +215,6 @@ export default function Booking() {
 
             const result = await createAppointment(bookingData, token);
 
-            // Save details for the receipt
             const bookedService = availableServices.find((s) => s.id === selectedService);
             setTransactionDetails({
                 id: result.id,
@@ -432,19 +229,14 @@ export default function Booking() {
                 stylistName: bookedStylist?.name || 'Any Stylist',
             });
 
-            // Transition to success screen
             setPaymentSimulationStep('success');
             setTimeout(() => {
                 showToast('Booking submitted! Pending salon approval. ⏳', 'success');
-                
-                // Client in-app notification
                 addNotification(
                     `Your booking for ${bookedService?.name || 'service'} at ${salon.name} on ${selectedDate} at ${selectedTime} was submitted and is pending salon approval.`,
                     'info',
                     { appointmentId: result.id, status: 'PENDING', salonName: salon.name }
                 );
-
-                // Salon owner in-app notification (e.g. mikenart7@gmail.com)
                 const ownerEmail = (salon as any)?.owner?.email || (salon as any)?.email || 'mikenart7@gmail.com';
                 addNotificationForUser(ownerEmail, {
                     message: `🔔 New booking request from ${name} for ${bookedService?.name || 'Service'} on ${selectedDate} at ${selectedTime}.`,
@@ -468,112 +260,137 @@ export default function Booking() {
         }
     };
 
-    const handleConfirm = async () => {
-        if (!paymentMethod) {
-            showToast('Please select a payment method.', 'error');
-            return;
-        }
-        if (paymentMethod === 'momo' && !momoPhone.trim()) {
-            showToast(`Please enter your MTN MoMo phone number.`, 'error');
-            return;
-        }
-        if (paymentMethod === 'card') {
-            if (cardNumber.replace(/\s/g, '').length < 16) {
-                showToast('Please enter a valid 16-digit card number.', 'error');
-                return;
-            }
-            if (!cardExpiry || cardExpiry.length < 5) {
-                showToast('Please enter a valid expiry date (MM/YY).', 'error');
-                return;
-            }
-            if (cardCvv.length < 3) {
-                showToast('Please enter a valid CVV.', 'error');
-                return;
-            }
-            if (!cardName.trim()) {
-                showToast('Please enter the name on the card.', 'error');
-                return;
-            }
-        }
-
-        // Cash requires no simulation, directly complete
-        if (paymentMethod === 'cash') {
-            await executeFinalBooking({
+    const handlePay = (method: 'momo' | 'card' | 'cash', details: any) => {
+        if (method === 'cash') {
+            executeFinalBooking({
                 method: 'CASH',
                 status: 'PENDING',
                 details: 'Pay at Salon'
             });
-            return;
-        }
-
-        // MoMo initiates the payment charge prompt immediately
-        if (paymentMethod === 'momo') {
-            await initiateMomoPayment();
-            return;
-        }
-
-        // Card opens the 3D-Secure Bank SMS OTP simulator
-        if (paymentMethod === 'card') {
-            const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
-            setOtpSentCode(randomOtp);
-            setOtpInput(['', '', '', '', '', '']);
-            setOtpError('');
-            setPaymentSimulationStep('card-otp');
-            
-            // Show the simulated SMS notification slider after 1s
-            setTimeout(() => {
-                setOtpShowSms(true);
-            }, 1000);
-            return;
+        } else if (method === 'momo') {
+            const phoneNumber = details.phone || '024 000 0000'; // Prompt for real number in a prod app
+            initiateMomoPayment(phoneNumber);
+        } else if (method === 'card') {
+            // Simplified card handling for mockup
+            executeFinalBooking({
+                method: 'CARD',
+                status: 'PAID',
+                details: 'Card ending in 1234'
+            });
         }
     };
 
-    // Card OTP changes
-    const handleOtpChange = (index: number, val: string) => {
-        const cleaned = val.replace(/\D/g, '');
-        if (!cleaned) return;
+    useEffect(() => {
+        const loadSalonData = async () => {
+            setIsLoadingSalon(true);
+            try {
+                let mappedSalons: Salon[] = [];
+                try {
+                    const apiSalonsData = await fetchSalons();
+                    if (Array.isArray(apiSalonsData) && apiSalonsData.length > 0) {
+                        mappedSalons = apiSalonsData.map((s: any) => mapApiSalonToFrontendSalon(s, null));
+                    } else {
+                        mappedSalons = fallbackSalons;
+                    }
+                } catch {
+                    mappedSalons = fallbackSalons;
+                }
 
-        const nextInput = [...otpInput];
-        nextInput[index] = cleaned.slice(-1);
-        setOtpInput(nextInput);
+                if (salonId) {
+                    const data = await fetchSalonById(salonId);
+                    setSalon(mapApiSalonToFrontendSalon(data));
+                } else if (mappedSalons.length > 0) {
+                    let targetSalon = mappedSalons[0];
+                    if (preselectedService) {
+                        const preselectedLower = preselectedService.toLowerCase();
+                        const found = mappedSalons.find(sl =>
+                            sl.services.some(sv =>
+                                sv.id === preselectedService ||
+                                sv.name.toLowerCase() === preselectedLower
+                            )
+                        );
+                        if (found) targetSalon = found;
+                    }
+                    setSalon(targetSalon);
+                }
+            } catch (err) {
+                console.error("Failed to fetch salon details:", err);
+                if (fallbackSalons.length > 0) {
+                    setSalon(fallbackSalons[0]);
+                }
+            } finally {
+                setIsLoadingSalon(false);
+            }
+        };
+        loadSalonData();
+    }, [salonId, preselectedService]);
 
-        // Move to next box
-        if (index < 5) {
-            otpRefs[index + 1].current?.focus();
-        }
-    };
+    const availableServices = salon?.services.length ? salon.services : allServices.slice(0, 4);
 
-    const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Backspace') {
-            const nextInput = [...otpInput];
-            if (nextInput[index]) {
-                nextInput[index] = '';
-                setOtpInput(nextInput);
-            } else if (index > 0) {
-                nextInput[index - 1] = '';
-                setOtpInput(nextInput);
-                otpRefs[index - 1].current?.focus();
+    useEffect(() => {
+        if (!salon) return;
+        const available = salon.services.length ? salon.services : allServices.slice(0, 4);
+
+        if (preselectedService) {
+            const preselectedLower = preselectedService.toLowerCase();
+            const matched = available.find(
+                (s) => s.id === preselectedService || s.name.toLowerCase() === preselectedLower
+            );
+            if (matched) {
+                setSelectedService(matched.id);
+                return;
             }
         }
+
+        if (selectedService) {
+            const matched = available.find(
+                (s) => s.id === selectedService || s.name.toLowerCase() === selectedService.toLowerCase()
+            );
+            if (matched) {
+                setSelectedService(matched.id);
+                return;
+            }
+        }
+
+        if (available.length > 0) {
+            setSelectedService(available[0].id);
+        }
+    }, [salon, preselectedService]);
+
+    const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+    useEffect(() => {
+        if (!salon?.id || !selectedDate) {
+            setBookedSlots([]);
+            return;
+        }
+        fetchBookedSlots(salon.id, selectedDate)
+            .then(setBookedSlots)
+            .catch(() => setBookedSlots([]));
+    }, [salon?.id, selectedDate]);
+
+    const handleNext = () => {
+        if (step === 0 && !selectedService) {
+            showToast('Please select a service to continue.', 'error');
+            return;
+        }
+        if (step === 1 && !selectedStylist) {
+            showToast('Please select a stylist.', 'error');
+            return;
+        }
+        if (step === 2 && (!selectedDate || !selectedTime)) {
+            showToast('Please select a date and time.', 'error');
+            return;
+        }
+        if (step === 3) {
+            if (!name.trim()) setName(user?.name || 'Guest Client');
+            if (!email.trim()) setEmail(user?.email || 'client@example.com');
+            if (!phone.trim()) setPhone('024 000 0000');
+        }
+        if (step < steps.length - 1) setStep(step + 1);
     };
 
-    const handleOtpVerify = async () => {
-        const code = otpInput.join('');
-        if (code.length < 6) {
-            setOtpError('Please enter the full 6-digit OTP code.');
-            return;
-        }
-        if (code !== otpSentCode) {
-            setOtpError('Incorrect OTP code. Please try again.');
-            return;
-        }
-        // Correct OTP! Process final booking
-        setOtpShowSms(false);
-        await executeFinalBooking({
-            method: 'CARD',
-            status: 'PAID',
-            details: `Card ending in ${cardNumber.replace(/\s/g, '').slice(-4)}`
-        });
+    const handleBack = () => {
+        if (step > 0) setStep(step - 1);
     };
 
     if (confirmed) {
@@ -583,17 +400,25 @@ export default function Booking() {
         
         return (
             <main className="booking-page">
-                <div className="container section booking-success animate-fade-up">
-                    <div className="success-icon">✓</div>
-                    <h2>Booking Confirmed!</h2>
-                    <p>Your appointment has been successfully booked.</p>
+                <div className="container section booking-success animate-fade-up" style={{ padding: '2rem 1rem', maxWidth: '640px', margin: '0 auto' }}>
+                    <div className="success-icon" style={{ 
+                        width: '72px', height: '72px', borderRadius: '50%', background: '#b10e6b', 
+                        color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                        fontSize: '36px', fontWeight: 'bold', margin: '0 auto 20px', boxShadow: '0 8px 24px rgba(177, 14, 107, 0.3)'
+                    }}>✓</div>
                     
-                    {/* Beautiful Invoice Card */}
+                    <h2 style={{ textAlign: 'center', fontSize: '2rem', fontWeight: 800, color: '#1a1a1a', marginBottom: '8px' }}>
+                        Booking Confirmed!
+                    </h2>
+                    <p style={{ textAlign: 'center', color: '#666', fontSize: '0.95rem', marginBottom: '32px' }}>
+                        Your appointment has been successfully booked.
+                    </p>
+                    
                     <div className="invoice-card">
                         <div className="invoice-header">
                             <div>
-                                <span className="invoice-logo">✨ Lumière Salon</span>
-                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Luxury Styling & Care</p>
+                                <span className="invoice-logo">✨ {salon?.name}</span>
+                                <p className="invoice-sublogo">Luxury Styling & Care</p>
                             </div>
                             <div className="invoice-meta">
                                 <p><strong>Receipt #:</strong> {receiptId.toUpperCase()}</p>
@@ -602,71 +427,42 @@ export default function Booking() {
                             </div>
                         </div>
 
-                        <div className="invoice-row">
-                            <span style={{ color: 'var(--text-secondary)' }}>Customer</span>
-                            <strong style={{ color: 'var(--text-primary)' }}>{name}</strong>
-                        </div>
-                        <div className="invoice-row">
-                            <span style={{ color: 'var(--text-secondary)' }}>Email</span>
-                            <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>
-                        </div>
-                        <div className="invoice-row">
-                            <span style={{ color: 'var(--text-secondary)' }}>Salon</span>
-                            <strong style={{ color: 'var(--text-primary)' }}>{salon?.name}</strong>
-                        </div>
-                        <div className="invoice-row">
-                            <span style={{ color: 'var(--text-secondary)' }}>Stylist</span>
-                            <strong style={{ color: 'var(--text-primary)' }}>{transactionDetails?.stylistName || 'Any Stylist'}</strong>
-                        </div>
-                        <div className="invoice-row">
-                            <span style={{ color: 'var(--text-secondary)' }}>Date & Time</span>
-                            <strong style={{ color: 'var(--text-primary)' }}>{transactionDetails?.date} at {transactionDetails?.time}</strong>
-                        </div>
-                        <div className="invoice-row">
-                            <span style={{ color: 'var(--text-secondary)' }}>Service booked</span>
-                            <strong style={{ color: 'var(--text-primary)' }}>{transactionDetails?.serviceName}</strong>
-                        </div>
-                        <div className="invoice-row">
-                            <span style={{ color: 'var(--text-secondary)' }}>Payment Method</span>
-                            <strong style={{ color: 'var(--text-primary)' }}>
-                                {transactionDetails?.paymentMethod === 'momo' ? 'MTN MoMo' : 
-                                 transactionDetails?.paymentMethod === 'card' ? 'Credit Card' : 
-                                 transactionDetails?.paymentMethod === 'cash' ? 'Pay at Salon (Cash)' : 'Unknown'}
-                            </strong>
-                        </div>
-                        <div className="invoice-row">
-                            <span style={{ color: 'var(--text-secondary)' }}>Payment Status</span>
-                            <span>
-                                <span className={`badge-status ${transactionDetails?.paymentStatus?.toLowerCase()}`}>
-                                    {transactionDetails?.paymentStatus || 'PENDING'}
-                                </span>
-                            </span>
-                        </div>
-                        
-                        <div className="invoice-row invoice-total">
-                            <span>Amount Charged</span>
-                            <span>GH₵{formattedPrice}</span>
+                        <div className="invoice-details">
+                            <div className="invoice-row">
+                                <span className="invoice-label">Customer</span>
+                                <span className="invoice-value">{name}</span>
+                            </div>
+                            <div className="invoice-row">
+                                <span className="invoice-label">Stylist</span>
+                                <span className="invoice-value">{transactionDetails?.stylistName || 'Any Stylist'}</span>
+                            </div>
+                            <div className="invoice-row">
+                                <span className="invoice-label">Date & Time</span>
+                                <span className="invoice-value">{transactionDetails?.date} at {transactionDetails?.time}</span>
+                            </div>
+                            <div className="invoice-row">
+                                <span className="invoice-label">Service</span>
+                                <span className="invoice-value">{transactionDetails?.serviceName}</span>
+                            </div>
+                            <div className="invoice-row">
+                                <span className="invoice-label">Payment Method</span>
+                                <span className="invoice-value">{transactionDetails?.paymentMethod?.toUpperCase()}</span>
+                            </div>
+                            
+                            <div className="invoice-row invoice-total">
+                                <span>Total Amount</span>
+                                <span className="invoice-total-amount">GH₵{formattedPrice}</span>
+                            </div>
                         </div>
                     </div>
 
                     <div className="invoice-actions">
-                        <button className="btn btn-secondary" onClick={() => window.print()}>
-                            <Printer size={18} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> Print Receipt
+                        <button type="button" className="confirm-booking-btn" style={{ background: 'transparent', color: '#b10e6b', border: '1px solid #b10e6b', boxShadow: 'none' }} onClick={() => window.print()}>
+                            <Printer size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Print Receipt
                         </button>
-                        <Link to="/" className="btn btn-primary">
+                        <Link to="/" className="confirm-booking-btn" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                             Back to Home
                         </Link>
-                    </div>
-
-                    {/* Salon location map on success */}
-                    <div className="success-map" style={{ marginTop: '30px' }}>
-                        <h4>Salon Location</h4>
-                        <SalonMap
-                            name={salon?.name || ''}
-                            address={salon?.address || ''}
-                            coordinates={salon?.coordinates || { lat: 0, lng: 0 }}
-                            height={200}
-                        />
                     </div>
                 </div>
             </main>
@@ -696,538 +492,132 @@ export default function Booking() {
         );
     }
 
+    const availableStylists = salon?.stylists || stylists;
+    const bookedServiceDetails = availableServices.find((s) => s.id === selectedService);
+    const bookedStylistDetails = availableStylists.find((st) => st.id === selectedStylist);
+
     return (
         <main className="booking-page">
-            <section className="booking-header">
-                <div className="container">
-                    <h1>Book an Appointment</h1>
-                    <p>at <strong>{salon.name}</strong></p>
-                    {allSalonsList.length > 1 && (
-                        <div style={{ marginTop: '12px' }}>
-                            <label style={{ fontSize: '0.85rem', opacity: 0.9, marginRight: '8px' }}>Salon Venue:</label>
-                            <select
-                                value={salon.id}
-                                onChange={(e) => {
-                                    const target = allSalonsList.find(s => s.id === e.target.value);
-                                    if (target) setSalon(target);
-                                }}
-                                style={{
-                                    padding: '6px 14px',
-                                    borderRadius: '8px',
-                                    border: '1px solid rgba(255,255,255,0.3)',
-                                    background: 'rgba(0,0,0,0.25)',
-                                    color: '#fff',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 500,
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                {allSalonsList.map(s => (
-                                    <option key={s.id} value={s.id} style={{ color: '#000' }}>
-                                        {s.name} — {s.location}
-                                    </option>
-                                ))}
-                            </select>
+            <div className="container">
+                {/* Custom Stepper */}
+                <div className="booking-stepper">
+                    {steps.map((s, i) => (
+                        <div key={s} style={{ display: 'flex', alignItems: 'center', flex: i === steps.length - 1 ? '0' : '1' }}>
+                            <div className="stepper-item">
+                                <div className={`stepper-circle ${i === step ? 'active' : i < step ? 'completed' : 'inactive'}`}>
+                                    {i < step ? '✓' : i + 1}
+                                </div>
+                                <span className={`stepper-label ${i === step ? 'active' : 'inactive'} hidden md:block`}>{s}</span>
+                            </div>
+                            {i < steps.length - 1 && (
+                                <div className={`stepper-line ${i < step ? 'active' : ''}`} />
+                            )}
                         </div>
+                    ))}
+                </div>
+
+                <div className="booking-content pb-20">
+                    {step === 0 && (
+                        <BookingServiceStep 
+                            availableServices={availableServices} 
+                            selectedService={selectedService} 
+                            onSelectService={setSelectedService} 
+                            onNext={handleNext} 
+                        />
+                    )}
+                    
+                    {step === 1 && (
+                        <BookingStylistStep 
+                            availableStylists={availableStylists}
+                            selectedStylist={selectedStylist}
+                            onSelectStylist={setSelectedStylist}
+                            onNext={handleNext}
+                        />
+                    )}
+
+                    {step === 2 && (
+                        <BookingTimeStep 
+                            availableTimeSlots={timeSlots.map(t => t.time)}
+                            bookedSlots={bookedSlots}
+                            selectedDate={selectedDate}
+                            selectedTime={selectedTime}
+                            onSelectDate={setSelectedDate}
+                            onSelectTime={setSelectedTime}
+                            onNext={handleNext}
+                            onBack={handleBack}
+                        />
+                    )}
+
+                    {step === 3 && (
+                        <BookingReviewStep 
+                            stylistDetails={bookedStylistDetails}
+                            serviceDetails={bookedServiceDetails}
+                            selectedDate={selectedDate}
+                            selectedTime={selectedTime}
+                            salonName={salon.name}
+                            salonAddress={salon.address}
+                            customerDetails={{ name, email, phone }}
+                            onCustomerDetailsChange={(field, val) => {
+                                if (field === 'name') setName(val);
+                                if (field === 'email') setEmail(val);
+                                if (field === 'phone') setPhone(val);
+                            }}
+                            onNext={handleNext}
+                            onBack={handleBack}
+                        />
+                    )}
+
+                    {step === 4 && (
+                        <BookingPaymentStep 
+                            serviceDetails={bookedServiceDetails}
+                            selectedDate={selectedDate}
+                            selectedTime={selectedTime}
+                            stylistName={bookedStylistDetails?.name || 'Any Stylist'}
+                            isSubmitting={isSubmitting}
+                            onPay={handlePay}
+                            onBack={handleBack}
+                        />
                     )}
                 </div>
-            </section>
-
-            <section className="section">
-                <div className="container">
-                    {/* Steps Indicator */}
-                    <div className="steps-indicator">
-                        {steps.map((s, i) => (
-                            <div
-                                key={s}
-                                className={`step-item ${i <= step ? 'active' : ''} ${i < step ? 'completed' : ''}`}
-                            >
-                                <div className="step-number">{i < step ? '✓' : i + 1}</div>
-                                <span className="step-label">{s}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="booking-content">
-                        {/* Step 0: Select Service */}
-                        {step === 0 && (
-                            <div className="booking-step animate-fade-up">
-                                <h3>Choose a Service</h3>
-                                <div className="booking-options">
-                                    {availableServices.map((s) => (
-                                        <div
-                                            key={s.id}
-                                            className={`booking-option ${selectedService === s.id ? 'selected' : ''}`}
-                                            onClick={() => setSelectedService(s.id)}
-                                        >
-                                            <div>
-                                                <h4>{s.name}</h4>
-                                                <p>{s.duration} • {s.category}</p>
-                                            </div>
-                                            <span className="option-price">GH₵{s.price}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 1: Choose Stylist */}
-                        {step === 1 && (
-                            <div className="booking-step animate-fade-up">
-                                <h3>Choose Your Stylist</h3>
-                                <div className="booking-stylists">
-                                    {(salon?.stylists || stylists).map((st) => (
-                                        <div
-                                            key={st.id}
-                                            className={`stylist-option ${selectedStylist === st.id ? 'selected' : ''}`}
-                                            onClick={() => setSelectedStylist(st.id)}
-                                        >
-                                            <div className="stylist-avatar">{st.name.charAt(0)}</div>
-                                            <h4>{st.name}</h4>
-                                            <p>{st.role}</p>
-                                            <span className="stylist-rating-small">★ {st.rating}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 2: Date & Time */}
-                        {step === 2 && (
-                            <div className="booking-step animate-fade-up">
-                                <h3>Pick Date & Time</h3>
-                                <div className="date-time-grid">
-                                    <div className="date-picker">
-                                        <label>Select Date</label>
-                                        <input
-                                            type="date"
-                                            value={selectedDate}
-                                            onChange={(e) => setSelectedDate(e.target.value)}
-                                            min={new Date().toISOString().split('T')[0]}
-                                            className="date-input"
-                                        />
-                                    </div>
-                                    <div className="time-picker">
-                                        <label>Select Time</label>
-                                        <div className="time-grid">
-                                {timeSlots.map((slot) => {
-                                                const isBooked = bookedSlots.includes(slot.time);
-                                                return (
-                                                    <button
-                                                        key={slot.time}
-                                                        className={`time-slot ${(!slot.available || isBooked) ? 'disabled' : ''} ${selectedTime === slot.time ? 'selected' : ''}`}
-                                                        disabled={!slot.available || isBooked}
-                                                        onClick={() => setSelectedTime(slot.time)}
-                                                        title={isBooked ? 'Already booked' : undefined}
-                                                    >
-                                                        {slot.time}
-                                                        {isBooked && <span className="slot-booked-dot" />}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 3: Your Details */}
-                        {step === 3 && (
-                            <div className="booking-step animate-fade-up">
-                                <h3>Your Details</h3>
-                                <div className="confirm-form">
-                                    <div className="form-group">
-                                        <label>Full Name</label>
-                                        <input
-                                            type="text"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            placeholder="Enter your name"
-                                            className="form-input"
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Email</label>
-                                        <input
-                                            type="email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="Enter your email"
-                                            className="form-input"
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Phone</label>
-                                        <input
-                                            type="tel"
-                                            value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                            placeholder="Enter your phone number"
-                                            className="form-input"
-                                        />
-                                    </div>
-
-                                    <div className="booking-summary">
-                                        <h4>Booking Summary</h4>
-                                        <div className="summary-row">
-                                            <span>Salon</span>
-                                            <span>{salon.name}</span>
-                                        </div>
-                                        <div className="summary-row">
-                                            <span>Service</span>
-                                            <span>{availableServices.find((s) => s.id === selectedService)?.name || '—'}</span>
-                                        </div>
-                                        <div className="summary-row">
-                                            <span>Stylist</span>
-                                            <span>{stylists.find((st) => st.id === selectedStylist)?.name || 'Any available'}</span>
-                                        </div>
-                                        <div className="summary-row">
-                                            <span>Date</span>
-                                            <span>{selectedDate || '—'}</span>
-                                        </div>
-                                        <div className="summary-row">
-                                            <span>Time</span>
-                                            <span>{selectedTime || '—'}</span>
-                                        </div>
-                                        <div className="summary-row total">
-                                            <span>Total</span>
-                                            <span>GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 4: Payment */}
-                        {step === 4 && (
-                            <div className="booking-step animate-fade-up">
-                                <h3>Choose Payment Method</h3>
-                                <p className="payment-subtitle">
-                                    Total: <strong className="payment-total-amount">
-                                        GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}
-                                    </strong>
-                                </p>
-
-                                {/* Payment method cards */}
-                                <div className="payment-methods-grid">
-                                    {paymentOptions.map((opt) => (
-                                        <button
-                                            key={opt.id}
-                                            type="button"
-                                            className={`payment-method-card ${paymentMethod === opt.id ? 'selected' : ''}`}
-                                            onClick={() => setPaymentMethod(opt.id)}
-                                        >
-                                            <div
-                                                className="payment-method-icon"
-                                                style={{ background: opt.bg, color: opt.color }}
-                                            >
-                                                <span>{opt.icon}</span>
-                                            </div>
-                                            <div className="payment-method-info">
-                                                <span className="payment-method-name">{opt.label}</span>
-                                                <span className="payment-method-desc">{opt.description}</span>
-                                            </div>
-                                            <div className={`payment-radio ${paymentMethod === opt.id ? 'checked' : ''}`} />
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* MoMo phone field */}
-                                {paymentMethod === 'momo' && (
-                                    <div className="payment-details-form animate-fade-up">
-                                        <div className="payment-method-header" style={{
-                                            background: '#FFD700',
-                                            color: '#1a1a1a',
-                                        }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><Smartphone size={18} /> MTN Mobile Money</span>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>MTN MoMo Phone Number</label>
-                                            <input
-                                                type="tel"
-                                                className="form-input"
-                                                placeholder="e.g. 024 000 0000"
-                                                value={momoPhone}
-                                                onChange={(e) => setMomoPhone(e.target.value)}
-                                            />
-                                        </div>
-                                        <p className="payment-info-note">
-                                            💡 You will receive a prompt on your phone to authorize the payment of
-                                            <strong> GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}</strong>.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {/* Card payment fields */}
-                                {paymentMethod === 'card' && (
-                                    <div className="payment-details-form animate-fade-up">
-                                        <div className="payment-method-header" style={{
-                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                            color: '#fff',
-                                        }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><CreditCard size={18} /> Credit / Debit Card</span>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Card Number</label>
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                placeholder="0000 0000 0000 0000"
-                                                value={cardNumber}
-                                                onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                                                maxLength={19}
-                                                inputMode="numeric"
-                                            />
-                                        </div>
-                                        <div className="card-row">
-                                            <div className="form-group">
-                                                <label>Expiry Date</label>
-                                                <input
-                                                    type="text"
-                                                    className="form-input"
-                                                    placeholder="MM/YY"
-                                                    value={cardExpiry}
-                                                    onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                                                    maxLength={5}
-                                                    inputMode="numeric"
-                                                />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>CVV</label>
-                                                <input
-                                                    type="password"
-                                                    className="form-input"
-                                                    placeholder="•••"
-                                                    value={cardCvv}
-                                                    onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                                                    maxLength={4}
-                                                    inputMode="numeric"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Name on Card</label>
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                placeholder="Full name as on card"
-                                                value={cardName}
-                                                onChange={(e) => setCardName(e.target.value)}
-                                            />
-                                        </div>
-                                        <p className="payment-info-note payment-mock-note" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                            <Lock size={14} /> This is a demo. No real payment will be processed.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {/* Cash on arrival */}
-                                {paymentMethod === 'cash' && (
-                                    <div className="payment-details-form animate-fade-up">
-                                        <div className="payment-method-header" style={{
-                                            background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-                                            color: '#fff',
-                                        }}>
-                                            <span>💵 Cash on Arrival</span>
-                                        </div>
-                                        <div className="cash-info">
-                                            <p>Please bring <strong>GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}</strong> in cash to your appointment.</p>
-                                            <p>📍 <em>{salon.address}</em></p>
-                                            <p>⏰ Your appointment is at <strong>{selectedTime}</strong> on <strong>{selectedDate}</strong>.</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Navigation Buttons */}
-                        <div className="booking-nav">
-                            {step > 0 && (
-                                <button className="btn btn-outline" onClick={handleBack}>
-                                    ← Back
-                                </button>
-                            )}
-                            {step < steps.length - 1 ? (
-                                <button className="btn btn-primary" onClick={handleNext}>
-                                    Continue →
-                                </button>
-                            ) : (
-                                <button className="btn btn-primary" onClick={handleConfirm} disabled={isSubmitting}>
-                                    {isSubmitting ? 'Processing...' : 'Confirm & Pay'}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </div>
 
             {/* ── Simulated Payment overlays ──────────────── */}
             {paymentSimulationStep !== 'none' && (
-                <div className="payment-overlay">
-                    
-                    {/* Simulated SMS banner for Card OTP */}
-                    {paymentSimulationStep === 'card-otp' && otpShowSms && (
-                        <div className="sms-toast-container">
-                            <div className="sms-toast">
-                                <span className="sms-icon">💬</span>
-                                <div className="sms-content">
-                                    <span className="sms-sender">Security Bank SMS</span>
-                                    <p className="sms-body">
-                                        Your SalonApp verification OTP code is <strong>{otpSentCode}</strong>. Do not share this code.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* MoMo Simulator Prompt Box */}
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
                     {paymentSimulationStep === 'momo-prompt' && (
-                        <div className="phone-mockup">
-                            <div className="phone-notch" />
-                            <div className="phone-screen animate-fade-up">
-                                <div className="phone-header">
-                                    <span>MTN GH</span>
-                                    <span>{new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false })}</span>
-                                    <span>📶 🔋</span>
-                                </div>
-
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 8px' }}>
-                                    <div className="momo-brand">
-                                        <Smartphone size={18} /> MTN Mobile Money
-                                    </div>
-                                    
-                                    <div className="momo-prompt-box" style={{ textAlign: 'center' }}>
-                                        <div className="spinner-ring" style={{ width: '40px', height: '40px', borderWidth: '3px', margin: '0 auto 16px' }} />
-                                        
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '6px' }}>Authorize Payment</h4>
-                                        <p style={{ fontSize: '0.78rem', color: '#555', lineHeight: '1.4' }}>
-                                            We sent a push prompt to your phone:
-                                        </p>
-                                        <strong style={{ fontSize: '0.9rem', color: '#111', display: 'block', margin: '4px 0 10px' }}>
-                                            {momoPhone}
-                                        </strong>
-                                        
-                                        <p style={{ fontSize: '0.75rem', color: '#666', marginBottom: '16px', lineHeight: '1.4' }}>
-                                            Please check your phone, enter your PIN, and approve the charge of 
-                                            <strong> GH₵{availableServices.find((s) => s.id === selectedService)?.price || 0}</strong>.
-                                        </p>
-
-                                        <div style={{ background: 'var(--primary-light)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
-                                            <RefreshCw size={12} className="animate-spin" />
-                                            Waiting for approval ({momoCountdown}s)
-                                        </div>
-
-                                        <button 
-                                            type="button" 
-                                            style={{ 
-                                                width: '100%', 
-                                                padding: '10px', 
-                                                fontSize: '0.85rem', 
-                                                border: '1px solid var(--border)', 
-                                                borderRadius: '8px', 
-                                                background: 'var(--surface)', 
-                                                fontWeight: 600, 
-                                                cursor: 'pointer',
-                                                color: '#ef4444' 
-                                            }} 
-                                            onClick={() => {
-                                                cleanIntervals();
-                                                setPaymentSimulationStep('none');
-                                            }}
-                                        >
-                                            Cancel Transaction
-                                        </button>
-                                    </div>
-                                </div>
-                                <div style={{ height: '12px' }} />
+                        <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative animate-fade-up">
+                            <div className="bg-[#FFCC00] p-4 text-[#003366] font-bold flex justify-between items-center">
+                                <span>MTN MoMo</span>
+                                <Smartphone size={20} />
                             </div>
-                        </div>
-                    )}
-
-                    {/* Card 3D Secure Verification Simulator */}
-                    {paymentSimulationStep === 'card-otp' && (
-                        <div className="payment-modal">
-                            <div className="bank-logo">🛡️ SecurityBank</div>
-                            <span className="badge-status paid" style={{ fontSize: '0.65rem', padding: '3px 8px' }}>Verified by VISA / MasterCard</span>
-                            
-                            <h3 style={{ marginTop: '20px', marginBottom: '8px' }}>One-Time Password (OTP)</h3>
-                            <p className="bank-subtitle">
-                                We sent a 6-digit verification code to the phone number linked to Card **** **** **** {cardNumber.replace(/\s/g, '').slice(-4)}.
-                            </p>
-
-                            <div className="otp-input-container">
-                                {otpInput.map((val, idx) => (
-                                    <input
-                                        key={idx}
-                                        id={`otp-box-${idx}`}
-                                        ref={otpRefs[idx]}
-                                        type="text"
-                                        maxLength={1}
-                                        className="otp-box"
-                                        value={val}
-                                        onChange={(e) => handleOtpChange(idx, e.target.value)}
-                                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                                        autoFocus={idx === 0}
-                                        inputMode="numeric"
-                                    />
-                                ))}
-                            </div>
-
-                            {otpError && (
-                                <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '16px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                    <AlertCircle size={16} /> {otpError}
-                                </p>
-                            )}
-
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-                                Code not received? <span style={{ color: '#4f46e5', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }} onClick={() => {
-                                    const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                                    setOtpSentCode(randomOtp);
-                                    setOtpShowSms(true);
-                                    setOtpError('');
-                                }}><RefreshCw size={12} /> Resend Code</span>
-                            </p>
-
-                            <div style={{ display: 'flex', gap: '16px' }}>
-                                <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => {
-                                    setOtpShowSms(false);
-                                    setPaymentSimulationStep('none');
-                                }}>
-                                    Cancel
-                                </button>
-                                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleOtpVerify}>
-                                    Verify
+                            <div className="p-6 text-center">
+                                <RefreshCw size={40} className="animate-spin text-primary mx-auto mb-4" />
+                                <h4 className="font-bold text-lg mb-2">Authorize Payment</h4>
+                                <p className="text-sm text-gray-600 mb-2">Check your phone and approve the charge for {momoPhone}</p>
+                                <p className="font-bold text-lg mb-6">GH₵{bookedServiceDetails?.price}</p>
+                                <div className="bg-primary/10 text-primary text-sm font-bold py-2 px-4 rounded-lg inline-block mb-6">
+                                    Waiting for approval ({momoCountdown}s)
+                                </div>
+                                <button 
+                                    className="w-full py-3 rounded-lg border border-red-200 text-red-500 font-bold hover:bg-red-50 transition-colors"
+                                    onClick={() => {
+                                        cleanIntervals();
+                                        setPaymentSimulationStep('none');
+                                    }}
+                                >
+                                    Cancel Transaction
                                 </button>
                             </div>
                         </div>
                     )}
-
-                    {/* Processing State */}
+                    
                     {paymentSimulationStep === 'processing' && (
-                        <div className="payment-modal">
-                            <div className="payment-processing-content">
-                                <div className="spinner-ring" />
-                                <h3>Authorizing Payment...</h3>
-                                <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.9rem' }}>
-                                    Verifying transaction with your payment processor. Please do not close this window.
-                                </p>
-                            </div>
+                        <div className="bg-white rounded-2xl p-8 text-center max-w-sm w-full animate-fade-up">
+                            <RefreshCw size={48} className="animate-spin text-primary mx-auto mb-4" />
+                            <h3 className="font-bold text-xl mb-2">Processing Payment...</h3>
+                            <p className="text-gray-500 text-sm">Please don't close this window.</p>
                         </div>
                     )}
-
-                    {/* Success checkmark State */}
-                    {paymentSimulationStep === 'success' && (
-                        <div className="payment-modal" style={{ padding: '40px 32px' }}>
-                            <div className="payment-processing-content">
-                                <CheckCircle size={64} style={{ color: '#10b981', marginBottom: '16px', animation: 'scaleUp 0.3s ease' }} />
-                                <h3 style={{ color: '#10b981' }}>Payment Approved!</h3>
-                                <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.9rem' }}>
-                                    Your booking has been secured. Loading receipt...
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
                 </div>
             )}
         </main>

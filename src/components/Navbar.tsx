@@ -217,14 +217,14 @@ export default function Navbar() {
                             )}
                         </div>
                     ) : (
-                        <>
-                            <button className="nav-login" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={() => login()}>
-                                Login
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-outline nav-login" onClick={() => login()}>
+                                Registered User
                             </button>
-                            <Link to="/booking" className="btn btn-primary nav-book">
-                                Book Now
-                            </Link>
-                        </>
+                            <button className="btn btn-primary nav-login" style={{ border: '2px solid transparent' }} onClick={() => login({ authorizationParams: { screen_hint: 'signup' } })}>
+                                New User
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -258,10 +258,16 @@ export default function Navbar() {
                         {/* Customer Options Card */}
                         <div className="fresha-card">
                             {!isLoggedIn ? (
-                                <button className="fresha-row primary-text" onClick={() => { setMenuOpen(false); login(); }}>
-                                    <span>Log in or sign up</span>
-                                    <ChevronRight size={20} className="fresha-chevron" />
-                                </button>
+                                <>
+                                    <button className="fresha-row" style={{ color: 'var(--primary)', border: '2px solid var(--primary)', borderRadius: '8px', marginBottom: '8px' }} onClick={() => { setMenuOpen(false); login(); }}>
+                                        <span>Registered User</span>
+                                        <ChevronRight size={20} className="fresha-chevron" />
+                                    </button>
+                                    <button className="fresha-row primary-text" style={{ border: '2px solid transparent', borderRadius: '8px' }} onClick={() => { setMenuOpen(false); login({ authorizationParams: { screen_hint: 'signup' } }); }}>
+                                        <span>New User</span>
+                                        <ChevronRight size={20} className="fresha-chevron" />
+                                    </button>
+                                </>
                             ) : (
                                 <>
                                     <Link to="/profile" className="fresha-row primary-text" onClick={() => setMenuOpen(false)}>

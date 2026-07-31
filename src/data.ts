@@ -12,7 +12,8 @@ export interface Stylist {
   id: string;
   name: string;
   role: string;
-  image: string;
+  bio?: string;
+  image?: string;
   rating: number;
   specialties: string[];
 }
@@ -189,7 +190,7 @@ const salon2Services: Service[] = [
     category: 'Haircare',
     price: 160,
     duration: '75 min',
-    image: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?auto=format&fit=crop&q=80&w=800',
+    image: '',
     description: 'Smooth, glossy silk press treatment paired with a professional blowout for sleek, frizz-free results.',
   },
 ];
@@ -210,7 +211,7 @@ const salon3Services: Service[] = [
     category: 'Skincare',
     price: 130,
     duration: '60 min',
-    image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=800',
+    image: '',
     description: 'Deep hydrating facial for melanin-rich skin infused with raw African shea butter and black soap exfoliation.',
   },
   {
@@ -219,7 +220,7 @@ const salon3Services: Service[] = [
     category: 'Makeup',
     price: 250,
     duration: '90 min',
-    image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=800',
+    image: '',
     description: 'Full bridal glam beat crafted for deep skin tones paired with traditional Gele headwrap luxury styling.',
   },
 ];
@@ -249,7 +250,7 @@ const salon4Services: Service[] = [
     category: 'Haircare',
     price: 80,
     duration: '30 min',
-    image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=800',
+    image: '',
     description: 'Precision beard shaping, edge-up, hot towel steam treatment, and moisturising balm finish.',
   },
 ];
@@ -261,7 +262,8 @@ export const stylists: Stylist[] = [
     id: 'st1',
     name: 'Akosua Pokuaa',
     role: 'Master Braider & Loc Specialist',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
+    bio: 'Specializes in protective styling, knotless braids, and loc maintenance with 8+ years of expertise.',
+    image: '/stylists/2CzySFQXCn7b9cwTICoc_.jpg',
     rating: 4.9,
     specialties: ['Knotless Braids', 'Fulani Braids', 'Goddess Locs'],
   },
@@ -269,7 +271,8 @@ export const stylists: Stylist[] = [
     id: 'st2',
     name: 'Ama Serwaa',
     role: 'Nail & Ankara Artist',
-    image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=400',
+    bio: 'Nail artist & beauty therapist known for custom Ankara pattern press-ons and spa pedicures.',
+    image: '/stylists/LlcsU7WHjgJpAlru3401_.jpg',
     rating: 4.8,
     specialties: ['Ankara Art', 'Gel Extensions', 'Spa Pedicures'],
   },
@@ -277,7 +280,8 @@ export const stylists: Stylist[] = [
     id: 'st3',
     name: 'Abena Osei',
     role: 'Melanin Skincare Specialist',
-    image: 'https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=crop&q=80&w=400',
+    bio: 'Certified esthetician dedicated to melanin skincare, shea butter facials, and deep glow treatments.',
+    image: '/stylists/OgRb8FZ4e4Gk_P9-oI6NK.jpg',
     rating: 4.9,
     specialties: ['Shea Butter Facials', 'Melanin Glow', 'Chemical Peels'],
   },
@@ -285,7 +289,8 @@ export const stylists: Stylist[] = [
     id: 'st4',
     name: 'Yaa Asantewaa',
     role: 'Afro Glam & Gele Styling Artist',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+    bio: 'Afro glam makeup artist and Gele wrapping specialist for weddings and high-fashion events.',
+    image: '/stylists/Photo by Horci via Iwaria.jpg',
     rating: 4.8,
     specialties: ['Gele Styling', 'Bridal Glam', 'Editorial Beats'],
   },
@@ -293,7 +298,8 @@ export const stylists: Stylist[] = [
     id: 'st5',
     name: 'Kofi Boakye',
     role: 'Barbering & Afro Precision Cut Specialist',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400',
+    bio: 'Master barber specializing in precision Afro fades, razor-sharp lineups, and beard styling.',
+    image: '/stylists/Photo by Kelvin Smile via Iwaria.jpg',
     rating: 4.9,
     specialties: ['Afro Fade', 'Sharp Line-up', 'Beard Grooming'],
   },
@@ -301,7 +307,8 @@ export const stylists: Stylist[] = [
     id: 'st6',
     name: 'Adwoa Kyei',
     role: 'Wig Customization & Silk Press Specialist',
-    image: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&q=80&w=400',
+    bio: 'Wig customizer & silk press master focused on heat protection and natural hair health.',
+    image: '', // Test avatar fallback
     rating: 4.9,
     specialties: ['Wig Melt', 'Silk Press', 'Frontal Customization'],
   },
@@ -439,24 +446,25 @@ export const mapApiSalonToFrontendSalon = (apiSalon: any, userCoords?: { lat: nu
     avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=400',
   }));
 
-  const mappedServices: Service[] = apiSalon.services ? apiSalon.services.map((s: any) => ({
+  const mappedServices = (apiSalon.services && apiSalon.services.length > 0) ? apiSalon.services.map((s: any) => ({
     id: s.id,
     name: s.name,
     category: s.category || 'Haircare',
     price: s.price,
     duration: s.duration,
     description: s.description || '',
-    image: s.image || '/images/knotless-box-braids.jpg',
-  })) : [];
+    image: s.image || '',
+  })) : services;
 
-  const mappedStylists = apiSalon.stylists ? apiSalon.stylists.map((st: any) => ({
+  const mappedStylists = (apiSalon.stylists && apiSalon.stylists.length > 0) ? apiSalon.stylists.map((st: any) => ({
     id: st.id,
     name: st.name,
     role: st.role,
-    image: st.image || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
+    bio: st.bio || '',
+    image: st.image || '',
     rating: st.rating || 5.0,
     specialties: st.specialties || [],
-  })) : [];
+  })) : stylists;
 
   const coords = apiSalon.coordinates || { lat: 5.5560, lng: -0.1821 };
 

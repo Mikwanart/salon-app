@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Link } from 'react-router-dom';
 import { 
     fetchSalonOwnerAppointments, 
     fetchSalonOwnerSalons,
@@ -7,14 +8,12 @@ import {
     updateSalonOwnerSalon,
     createSalonService, updateSalonService, deleteSalonService,
     createSalonStylist, updateSalonStylist, deleteSalonStylist,
-    updateAppointment,
-    registerSalon
+    updateAppointment
 } from '../lib/api';
 import {
-    LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, Legend,
+    LineChart, Line, XAxis, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { Calendar, DollarSign, TrendingUp, XCircle, BarChart2, MapPin, Phone, Scissors, Users, Settings, Plus, Edit2, Trash2, CheckCircle, Store } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, XCircle, BarChart2, Scissors, Users, Plus, Edit2, Trash2, CheckCircle, Store } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useNotifications } from '../context/NotificationContext';
 import './Dashboard.css';
@@ -43,11 +42,7 @@ export default function Dashboard() {
     const [ownerSalons, setOwnerSalons] = useState<any[]>([]);
     const [selectedSalonId, setSelectedSalonId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
-    const [showNewSalonModal, setShowNewSalonModal] = useState(false);
 
-    // Registration state when salon is not created yet
-    const [regData, setRegData] = useState({ name: '', address: '', city: '', state: '', phone: '' });
-    const [isRegisteringSalon, setIsRegisteringSalon] = useState(false);
 
     const ownerSalon = useMemo(() => {
         if (!ownerSalons || ownerSalons.length === 0) return null;
@@ -59,27 +54,7 @@ export default function Dashboard() {
         return rawAppointments.filter(app => app.salon?.id === ownerSalon.id);
     }, [rawAppointments, ownerSalon]);
 
-    const handleInlineRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsRegisteringSalon(true);
-        try {
-            const token = await getAccessTokenSilently();
-            const newSalon = await registerSalon(token, regData);
-            showToast('Salon registered successfully! 🎉', 'success');
-            setRegData({ name: '', address: '', city: '', state: '', phone: '' });
-            setShowNewSalonModal(false);
-            if (newSalon?.id) {
-                setSelectedSalonId(newSalon.id);
-                localStorage.setItem('selected_salon_id', newSalon.id);
-            }
-            await loadData();
-        } catch (err: any) {
-            console.error('Failed to register salon:', err);
-            showToast(err.message || 'Failed to register salon.', 'error');
-        } finally {
-            setIsRegisteringSalon(false);
-        }
-    };
+
 
     const loadData = async () => {
         setIsLoading(true);
@@ -117,204 +92,117 @@ export default function Dashboard() {
     }, [getAccessTokenSilently]);
 
     if (isLoading && !ownerSalon) {
-        return <main className="dashboard-page"><div style={{ textAlign: 'center', padding: '40px' }}>Loading your dashboard...</div></main>;
+        return (
+            <main className="dashboard-page">
+                <div className="global-loading-wrap">
+                    <div className="global-spinner"></div>
+                    <span className="global-loading-text">Loading your dashboard...</span>
+                </div>
+            </main>
+        );
     }
 
     if (!ownerSalon) {
         return (
             <main className="dashboard-page">
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 16px' }}>
-                    <form onSubmit={handleInlineRegister} className="fs-reg-form fade-in" style={{ maxWidth: '520px', margin: '0 auto' }}>
-                        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                            <Scissors size={40} style={{ color: 'var(--primary)', marginBottom: '8px' }} />
-                            <h3>Register Your Salon</h3>
-                            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>
-                                Complete your salon registration below to launch your owner dashboard.
-                            </p>
-                        </div>
-                        
-                        <div className="form-group" style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Salon Name</label>
-                            <input type="text" className="fs-reg-input" value={regData.name} onChange={e => setRegData({...regData, name: e.target.value})} placeholder="e.g. Luxe Beauty Studio" required />
-                        </div>
-                        
-                        <div className="form-group" style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Phone Number</label>
-                            <input type="tel" className="fs-reg-input" value={regData.phone} onChange={e => setRegData({...regData, phone: e.target.value})} placeholder="+1 234 567 8900" required />
-                        </div>
-                        
-                        <div className="form-group" style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Street Address</label>
-                            <input type="text" className="fs-reg-input" value={regData.address} onChange={e => setRegData({...regData, address: e.target.value})} placeholder="123 Main Street" required />
-                        </div>
-                        
-                        <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-                            <div className="form-group" style={{ flex: 1 }}>
-                                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>City</label>
-                                <input type="text" className="fs-reg-input" value={regData.city} onChange={e => setRegData({...regData, city: e.target.value})} placeholder="Accra" required />
-                            </div>
-                            <div className="form-group" style={{ flex: 1 }}>
-                                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Region</label>
-                                <input type="text" className="fs-reg-input" value={regData.state} onChange={e => setRegData({...regData, state: e.target.value})} placeholder="Greater Accra" required />
-                            </div>
-                        </div>
-                        
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '12px' }} disabled={isRegisteringSalon}>
-                                {isRegisteringSalon ? 'Registering...' : 'Complete Registration 🎉'}
-                            </button>
-                        </div>
-                    </form>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: '40px 16px' }}>
+                    <div style={{ textAlign: 'center', maxWidth: '500px' }}>
+                        <Store size={64} style={{ color: 'var(--primary)', marginBottom: '16px' }} />
+                        <h2>Welcome to SalonBook</h2>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
+                            You haven't registered any salons yet. Create your first salon to access the owner dashboard.
+                        </p>
+                        <Link to="/for-salons" className="btn btn-primary" style={{ padding: '12px 24px', fontSize: '1rem' }}>
+                            Create Your Salon
+                        </Link>
+                    </div>
                 </div>
             </main>
         );
     }
 
     return (
-        <main className="dashboard-page">
-            <section className="dashboard-header">
-                <div className="container">
-                    <div className="dashboard-title-row">
-                        <div>
-                            <h1><BarChart2 size={28} /> Salon Dashboard</h1>
-                            {ownerSalons.length > 1 ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <Store size={16} style={{ color: 'var(--primary)' }} /> Select Salon:
-                                    </span>
-                                    <select
-                                        value={ownerSalon.id}
-                                        onChange={(e) => {
-                                            if (e.target.value === 'REGISTER_NEW') {
-                                                setShowNewSalonModal(true);
-                                            } else {
-                                                setSelectedSalonId(e.target.value);
-                                                localStorage.setItem('selected_salon_id', e.target.value);
-                                                const sName = ownerSalons.find(s => s.id === e.target.value)?.name;
-                                                showToast(`Switched view to ${sName}`, 'info');
-                                            }
-                                        }}
-                                        style={{
-                                            padding: '6px 16px',
-                                            borderRadius: '8px',
-                                            border: '2px solid var(--primary)',
-                                            background: 'var(--surface)',
-                                            color: 'var(--text-primary)',
-                                            fontWeight: 600,
-                                            fontSize: '0.92rem',
-                                            cursor: 'pointer',
-                                            outline: 'none',
-                                        }}
-                                    >
-                                        {ownerSalons.map((s) => (
-                                            <option key={s.id} value={s.id}>
-                                                📍 {s.name} ({s.city})
-                                            </option>
-                                        ))}
-                                        <option value="REGISTER_NEW">➕ Register Another Salon...</option>
-                                    </select>
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
-                                    <p style={{ margin: 0 }}>Managing: <strong>{ownerSalon.name}</strong></p>
-                                    <button
-                                        onClick={() => setShowNewSalonModal(true)}
-                                        className="btn btn-outline"
-                                        style={{ padding: '4px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                                    >
-                                        <Plus size={14} /> Add Another Salon
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                        <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-muted)', alignItems: 'center' }}>
-                            {ownerSalon.address && (
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <MapPin size={14} /> {ownerSalon.city}
-                                </span>
-                            )}
-                            {ownerSalon.phone && (
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <Phone size={14} /> {ownerSalon.phone}
-                                </span>
-                            )}
-                        </div>
+        <div className="dashboard-page dashboard-layout">
+            {/* Sidebar Navigation */}
+            <aside className="dashboard-sidebar">
+                <Link to="/" className="sidebar-logo">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', background: 'var(--primary)', color: '#fff', borderRadius: '10px' }}>
+                        <Scissors size={20} style={{ transform: 'rotate(-45deg)' }} />
                     </div>
+                    <span>SalonBook</span>
+                </Link>
 
-                    <div className="dashboard-tabs">
-                        <button className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}><BarChart2 size={16}/> Overview</button>
-                        <button className={`tab-btn ${activeTab === 'appointments' ? 'active' : ''}`} onClick={() => setActiveTab('appointments')}><Calendar size={16}/> Appointments</button>
-                        <button className={`tab-btn ${activeTab === 'salon' ? 'active' : ''}`} onClick={() => setActiveTab('salon')}><Settings size={16}/> Salon Info</button>
-                        <button className={`tab-btn ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')}><Scissors size={16}/> Services</button>
-                        <button className={`tab-btn ${activeTab === 'stylists' ? 'active' : ''}`} onClick={() => setActiveTab('stylists')}><Users size={16}/> Stylists</button>
+                <nav className="sidebar-nav">
+                    <button className={`nav-link ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+                        <BarChart2 size={20}/> Overview
+                    </button>
+                    <button className={`nav-link ${activeTab === 'appointments' ? 'active' : ''}`} onClick={() => setActiveTab('appointments')}>
+                        <Calendar size={20}/> Appointments
+                    </button>
+                    <button className={`nav-link ${activeTab === 'salon' ? 'active' : ''}`} onClick={() => setActiveTab('salon')}>
+                        <Store size={20}/> Salon Info
+                    </button>
+                    <button className={`nav-link ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')}>
+                        <Scissors size={20}/> Services
+                    </button>
+                    <button className={`nav-link ${activeTab === 'stylists' ? 'active' : ''}`} onClick={() => setActiveTab('stylists')}>
+                        <Users size={20}/> Stylists
+                    </button>
+                </nav>
+            </aside>
+
+            {/* Main Content Area */}
+            <main className="dashboard-main">
+                {/* Topbar */}
+                <header className="dashboard-topbar">
+                    <h2 className="topbar-title">{ownerSalon.name} - Salon Owner Portal</h2>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {ownerSalons.length > 1 ? (
+                            <select
+                                className="select-salon-dropdown"
+                                value={ownerSalon.id}
+                                onChange={(e) => {
+                                    if (e.target.value === 'REGISTER_NEW') {
+                                        window.location.href = '/for-salons';
+                                    } else {
+                                        setSelectedSalonId(e.target.value);
+                                        localStorage.setItem('selected_salon_id', e.target.value);
+                                        const sName = ownerSalons.find(s => s.id === e.target.value)?.name;
+                                        showToast(`Switched view to ${sName}`, 'info');
+                                    }
+                                }}
+                            >
+                                {ownerSalons.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.name} ({s.city})
+                                    </option>
+                                ))}
+                                <option value="REGISTER_NEW">+ Register Another Salon</option>
+                            </select>
+                        ) : (
+                            <Link
+                                to="/for-salons"
+                                className="btn btn-outline btn-sm"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            >
+                                <Plus size={14} /> Add Another Salon
+                            </Link>
+                        )}
                     </div>
-                </div>
-            </section>
+                </header>
 
-            <section className="section dashboard-content">
-                <div className="container">
+                <div className="dashboard-content-area">
                     {activeTab === 'overview' && <OverviewTab rawAppointments={salonAppointments} />}
                     {activeTab === 'appointments' && <AppointmentsTab rawAppointments={salonAppointments} reload={loadData} getAccessTokenSilently={getAccessTokenSilently} showToast={showToast} />}
                     {activeTab === 'salon' && <SalonInfoTab salon={ownerSalon} reload={loadData} getAccessTokenSilently={getAccessTokenSilently} showToast={showToast} />}
                     {activeTab === 'services' && <ServicesTab salon={ownerSalon} reload={loadData} getAccessTokenSilently={getAccessTokenSilently} showToast={showToast} />}
                     {activeTab === 'stylists' && <StylistsTab salon={ownerSalon} reload={loadData} getAccessTokenSilently={getAccessTokenSilently} showToast={showToast} />}
                 </div>
-            </section>
+            </main>
 
-            {/* Modal for adding another salon */}
-            {showNewSalonModal && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)',
-                    zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
-                }} className="fade-in">
-                    <form onSubmit={handleInlineRegister} className="fs-reg-form" style={{ maxWidth: '500px', width: '100%' }}>
-                        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                            <Scissors size={36} style={{ color: 'var(--primary)', marginBottom: '8px' }} />
-                            <h3>Register Additional Salon</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-                                Add a new salon location or branch to your owner management dashboard.
-                            </p>
-                        </div>
 
-                        <div className="form-group" style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Salon Name</label>
-                            <input type="text" className="fs-reg-input" value={regData.name} onChange={e => setRegData({...regData, name: e.target.value})} placeholder="e.g. Luxe Beauty Studio - Downtown" required />
-                        </div>
-                        
-                        <div className="form-group" style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Phone Number</label>
-                            <input type="tel" className="fs-reg-input" value={regData.phone} onChange={e => setRegData({...regData, phone: e.target.value})} placeholder="+1 234 567 8900" required />
-                        </div>
-                        
-                        <div className="form-group" style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Street Address</label>
-                            <input type="text" className="fs-reg-input" value={regData.address} onChange={e => setRegData({...regData, address: e.target.value})} placeholder="456 Branch Avenue" required />
-                        </div>
-                        
-                        <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-                            <div className="form-group" style={{ flex: 1 }}>
-                                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>City</label>
-                                <input type="text" className="fs-reg-input" value={regData.city} onChange={e => setRegData({...regData, city: e.target.value})} placeholder="Kumasi" required />
-                            </div>
-                            <div className="form-group" style={{ flex: 1 }}>
-                                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: '0.9rem' }}>Region</label>
-                                <input type="text" className="fs-reg-input" value={regData.state} onChange={e => setRegData({...regData, state: e.target.value})} placeholder="Ashanti Region" required />
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '10px' }} disabled={isRegisteringSalon}>
-                                {isRegisteringSalon ? 'Registering...' : 'Add Salon 🎉'}
-                            </button>
-                            <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowNewSalonModal(false)}>
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-        </main>
+        </div>
     );
 }
 
@@ -323,7 +211,13 @@ export default function Dashboard() {
 // ---------------------------------------------------------
 function OverviewTab({ rawAppointments }: { rawAppointments: RawAppointment[] }) {
     const bookings = useMemo(() => {
-        return rawAppointments.map((a) => {
+        return [...rawAppointments]
+            .sort((a: any, b: any) => {
+                const timeA = new Date(a.createdAt || a.date).getTime();
+                const timeB = new Date(b.createdAt || b.date).getTime();
+                return timeB - timeA;
+            })
+            .map((a) => {
             const dateObj = new Date(a.date);
             return {
                 id: a.id,
@@ -346,20 +240,19 @@ function OverviewTab({ rawAppointments }: { rawAppointments: RawAppointment[] })
     const cancelled   = bookings.filter(b => b.status === 'cancelled');
     const totalRevenue = confirmed.reduce((sum, b) => sum + b.price, 0);
     const avgValue    = confirmed.length ? Math.round(totalRevenue / confirmed.length) : 0;
-    const cancelRate  = bookings.length ? Math.round((cancelled.length / bookings.length) * 100) : 0;
+    const cancelRate  = bookings.length ? ((cancelled.length / bookings.length) * 100).toFixed(1) : 0;
 
     const revenueData = useMemo(() => {
-        const days: { label: string; revenue: number; bookings: number }[] = [];
-        for (let i = 6; i >= 0; i--) {
+        const days: { label: string; revenue: number }[] = [];
+        for (let i = 0; i < 7; i++) {
             const d = new Date();
-            d.setDate(d.getDate() - i);
+            d.setDate(d.getDate() + i);
             const dateStr = d.toISOString().split('T')[0];
-            const label = d.toLocaleDateString('en-US', { weekday: 'short' });
+            const label = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
             const dayBookings = confirmed.filter(b => b.date === dateStr);
             days.push({
                 label,
                 revenue: dayBookings.reduce((s, b) => s + b.price, 0),
-                bookings: dayBookings.length,
             });
         }
         return days;
@@ -368,58 +261,110 @@ function OverviewTab({ rawAppointments }: { rawAppointments: RawAppointment[] })
     const serviceData = useMemo(() => {
         const map: Record<string, number> = {};
         confirmed.forEach(b => { map[b.serviceName] = (map[b.serviceName] || 0) + 1; });
-        return Object.entries(map).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 6);
+        const total = confirmed.length || 1;
+        return Object.entries(map).map(([name, count]) => ({
+            name,
+            percent: Math.round((count / total) * 100)
+        })).sort((a, b) => b.percent - a.percent).slice(0, 3);
     }, [confirmed]);
-
-    const kpis = [
-        { label: 'Total Bookings',    value: confirmed.length,             icon: <Calendar size={22} />,   color: '#8b5cf6' },
-        { label: 'Total Revenue',     value: `$${totalRevenue.toLocaleString()}`, icon: <DollarSign size={22} />, color: '#10b981' },
-        { label: 'Avg Booking Value', value: `$${avgValue}`,               icon: <TrendingUp size={22} />, color: '#f59e0b' },
-        { label: 'Cancellation Rate', value: `${cancelRate}%`,             icon: <XCircle size={22} />,    color: '#ef4444' },
-    ];
 
     return (
         <div className="fade-in">
+            {/* Business Overview Stats */}
             <div className="kpi-grid">
-                {kpis.map(k => (
-                    <div className="kpi-card" key={k.label}>
-                        <div className="kpi-icon" style={{ background: `${k.color}22`, color: k.color }}>{k.icon}</div>
-                        <div className="kpi-info"><span className="kpi-value">{k.value}</span><span className="kpi-label">{k.label}</span></div>
+                <div className="kpi-card">
+                    <div className="kpi-header">
+                        <div className="kpi-icon-wrap"><Calendar size={20} /></div>
+                        <span className="kpi-badge trend">+12% <TrendingUp size={12}/></span>
                     </div>
-                ))}
+                    <p className="kpi-label">Total Bookings</p>
+                    <h3 className="kpi-value">{confirmed.length}</h3>
+                    <p className="kpi-subtext">vs last month</p>
+                </div>
+                <div className="kpi-card">
+                    <div className="kpi-header">
+                        <div className="kpi-icon-wrap"><DollarSign size={20} /></div>
+                        <span className="kpi-badge trend">+8% <TrendingUp size={12}/></span>
+                    </div>
+                    <p className="kpi-label">Total Revenue</p>
+                    <h3 className="kpi-value">GHC {totalRevenue.toLocaleString()}</h3>
+                    <p className="kpi-subtext">vs last week</p>
+                </div>
+                <div className="kpi-card">
+                    <div className="kpi-header">
+                        <div className="kpi-icon-wrap"><TrendingUp size={20} /></div>
+                        <span className="kpi-badge status">Optimal</span>
+                    </div>
+                    <p className="kpi-label">Avg. Booking Value</p>
+                    <h3 className="kpi-value">GHC {avgValue}</h3>
+                </div>
+                <div className="kpi-card">
+                    <div className="kpi-header">
+                        <div className="kpi-icon-wrap"><XCircle size={20} /></div>
+                        <span className="kpi-badge status" style={{ backgroundColor: 'rgba(132,253,100,0.2)', color: 'var(--tertiary)' }}>Low</span>
+                    </div>
+                    <p className="kpi-label">Cancellation Rate</p>
+                    <h3 className="kpi-value">{cancelRate}%</h3>
+                </div>
             </div>
 
-            <div className="charts-row">
-                <div className="chart-card">
-                    <h3>Revenue — Last 7 Days</h3>
-                    {confirmed.length === 0 ? <div className="chart-empty">No bookings yet.</div> :
-                        <ResponsiveContainer width="100%" height={220}>
-                            <LineChart data={revenueData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                                <XAxis dataKey="label" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                                <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                                <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                                <Legend />
-                                <Line type="monotone" dataKey="revenue"  stroke="#8b5cf6" strokeWidth={2.5} dot={{ r: 4 }} name="Revenue ($)" />
-                                <Line type="monotone" dataKey="bookings" stroke="#10b981" strokeWidth={2}   dot={{ r: 3 }} name="Bookings" />
-                            </LineChart>
-                        </ResponsiveContainer>
+            {/* Dashboard Layout (Asymmetric) */}
+            <div className="dashboard-grid-main">
+                {/* Revenue Line Chart */}
+                <section className="chart-section" style={{ minHeight: '350px', display: 'flex', flexDirection: 'column' }}>
+                    <div className="chart-header">
+                        <div>
+                            <h3>Upcoming Revenue — Next 7 Days</h3>
+                            <p>Projected daily revenue</p>
+                        </div>
+                        <div className="chart-legend">
+                            <div className="chart-legend-dot"></div> GHC
+                        </div>
+                    </div>
+                    <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                        {confirmed.length === 0 ? <div className="chart-empty" style={{ paddingTop: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No bookings yet.</div> :
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.15}/>
+                                            <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--on-surface-variant)', fontWeight: 700 }} dy={10} />
+                                    <Tooltip 
+                                        contentStyle={{ background: 'var(--surface-card)', border: '1px solid rgba(177, 14, 107, 0.1)', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                                        cursor={{ stroke: 'rgba(177, 14, 107, 0.1)', strokeWidth: 2 }}
+                                    />
+                                    <Line type="monotone" dataKey="revenue" stroke="var(--primary)" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: 'var(--primary)', stroke: '#fff', strokeWidth: 2 }} />
+                                    <Line type="monotone" dataKey="revenue" stroke="none" fill="url(#revenueGradient)" activeDot={false} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        }
+                    </div>
+                </section>
+
+                {/* Top Services */}
+                <section className="chart-section">
+                    <div className="chart-header">
+                        <h3>Top Services</h3>
+                    </div>
+                    {serviceData.length === 0 ? <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No service data yet</div> :
+                        <div className="top-services-list">
+                            {serviceData.map((svc, i) => (
+                                <div className="service-item" key={i}>
+                                    <div className="service-item-header">
+                                        <span className="name">{svc.name}</span>
+                                        <span className="percent">{svc.percent}%</span>
+                                    </div>
+                                    <div className="service-progress-bg">
+                                        <div className="service-progress-fill" style={{ width: `${svc.percent}%` }}></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     }
-                </div>
-                <div className="chart-card">
-                    <h3>Top Services</h3>
-                    {serviceData.length === 0 ? <div className="chart-empty">No service data yet</div> :
-                        <ResponsiveContainer width="100%" height={220}>
-                            <BarChart data={serviceData} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                                <XAxis type="number" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                                <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                                <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 6, 6, 0]} name="Bookings" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    }
-                </div>
+                </section>
             </div>
         </div>
     );
@@ -431,9 +376,12 @@ function OverviewTab({ rawAppointments }: { rawAppointments: RawAppointment[] })
 function AppointmentsTab({ rawAppointments, reload, getAccessTokenSilently, showToast }: any) {
     const { addNotificationForUser, updateNotificationActionStatus } = useNotifications();
 
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
+
     const handleUpdateStatus = async (a: any, newStatus: string) => {
         const actionLabel = newStatus === 'CONFIRMED' ? 'Accept' : newStatus === 'CANCELLED' ? 'Decline' : newStatus;
         if (!confirm(`Are you sure you want to ${actionLabel.toLowerCase()} this appointment for ${a.client?.name || 'this client'}?`)) return;
+        setUpdatingId(a.id);
         try {
             const token = await getAccessTokenSilently();
             await updateAppointment(a.id, { status: newStatus }, token);
@@ -457,14 +405,29 @@ function AppointmentsTab({ rawAppointments, reload, getAccessTokenSilently, show
             reload();
         } catch (e) {
             showToast('Failed to update status', 'error');
+        } finally {
+            setUpdatingId(null);
         }
     };
+
+    const sortedAppointments = useMemo(() => {
+        return [...rawAppointments].sort((a: any, b: any) => {
+            const timeA = new Date(a.createdAt || a.date).getTime();
+            const timeB = new Date(b.createdAt || b.date).getTime();
+            return timeB - timeA;
+        });
+    }, [rawAppointments]);
 
     if (rawAppointments.length === 0) return <div className="chart-empty">No appointments found.</div>;
 
     return (
         <div className="recent-bookings-card fade-in">
-            <h3>All Appointments</h3>
+            <div className="card-header-flex">
+                <div>
+                    <h3>Appointments</h3>
+                    <p className="card-subtitle">Manage customer bookings and schedule</p>
+                </div>
+            </div>
             <div className="bookings-table-wrap">
                 <table className="bookings-table">
                     <thead>
@@ -477,7 +440,7 @@ function AppointmentsTab({ rawAppointments, reload, getAccessTokenSilently, show
                         </tr>
                     </thead>
                     <tbody>
-                        {rawAppointments.map((a: any) => (
+                        {sortedAppointments.map((a: any) => (
                             <tr key={a.id}>
                                 <td>
                                     <div style={{ fontWeight: 600 }}>{a.client?.name}</div>
@@ -497,18 +460,18 @@ function AppointmentsTab({ rawAppointments, reload, getAccessTokenSilently, show
                                 </td>
                                 <td>
                                     {a.status === 'PENDING' && (
-                                        <div style={{ display: 'flex', gap: '6px' }}>
-                                            <button className="btn btn-sm" style={{ backgroundColor: '#10b981', color: '#fff', border: 'none' }} onClick={() => handleUpdateStatus(a, 'CONFIRMED')}>
-                                                <CheckCircle size={14}/> Accept
+                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                            <button className="btn btn-sm" style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }} disabled={updatingId === a.id} onClick={() => handleUpdateStatus(a, 'CONFIRMED')}>
+                                                {updatingId === a.id ? <div className="global-spinner small" style={{ width: 12, height: 12, borderWidth: 2 }} /> : <CheckCircle size={14}/>} Accept
                                             </button>
-                                            <button className="btn btn-sm" style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none' }} onClick={() => handleUpdateStatus(a, 'CANCELLED')}>
-                                                <XCircle size={14}/> Decline
+                                            <button className="btn btn-sm" style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }} disabled={updatingId === a.id} onClick={() => handleUpdateStatus(a, 'CANCELLED')}>
+                                                {updatingId === a.id ? <div className="global-spinner small" style={{ width: 12, height: 12, borderWidth: 2 }} /> : <XCircle size={14}/>} Decline
                                             </button>
                                         </div>
                                     )}
                                     {a.status === 'CONFIRMED' && (
-                                        <button className="btn btn-sm btn-outline" onClick={() => handleUpdateStatus(a, 'COMPLETED')}>
-                                            <CheckCircle size={14}/> Complete
+                                        <button className="btn btn-sm btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }} disabled={updatingId === a.id} onClick={() => handleUpdateStatus(a, 'COMPLETED')}>
+                                            {updatingId === a.id ? <div className="global-spinner small" style={{ width: 12, height: 12, borderWidth: 2 }} /> : <CheckCircle size={14}/>} Complete
                                         </button>
                                     )}
                                     {a.status === 'COMPLETED' && <span style={{fontSize:'0.8rem', color:'var(--text-muted)'}}>Done</span>}
@@ -554,6 +517,10 @@ function SalonInfoTab({ salon, reload, getAccessTokenSilently, showToast }: any)
 
     return (
         <form onSubmit={handleSubmit} className="mgmt-form fade-in">
+            <div style={{ marginBottom: '1.5rem' }}>
+                <h3>Salon Profile</h3>
+                <p className="card-subtitle">Update your salon information and cover photo</p>
+            </div>
             <div className="form-group">
                 <label>Salon Name</label>
                 <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
@@ -582,7 +549,10 @@ function SalonInfoTab({ salon, reload, getAccessTokenSilently, showToast }: any)
                     <input type="url" value={formData.coverImage} onChange={e => setFormData({...formData, coverImage: e.target.value})} placeholder="https://..." />
                 </div>
             </div>
-            <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
+            <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }} disabled={saving}>
+                {saving && <div className="global-spinner small" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+                {saving ? 'Saving Changes...' : 'Save Changes'}
+            </button>
         </form>
     );
 }
@@ -592,9 +562,11 @@ function SalonInfoTab({ salon, reload, getAccessTokenSilently, showToast }: any)
 // ---------------------------------------------------------
 function ServicesTab({ salon, reload, getAccessTokenSilently, showToast }: any) {
     const [editing, setEditing] = useState<any>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this service?')) return;
+        setDeletingId(id);
         try {
             const token = await getAccessTokenSilently();
             await deleteSalonService(token, id);
@@ -602,6 +574,8 @@ function ServicesTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
             reload();
         } catch(e) {
             showToast('Failed to delete', 'error');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -609,6 +583,7 @@ function ServicesTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
         <div className="fade-in">
             {editing ? (
                 <ServiceForm 
+                    salon={salon}
                     service={editing.id ? editing : null} 
                     onCancel={() => setEditing(null)} 
                     onSuccess={() => { setEditing(null); reload(); }} 
@@ -617,8 +592,11 @@ function ServicesTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
                 />
             ) : (
                 <div className="recent-bookings-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <h3>Services</h3>
+                    <div className="card-header-flex">
+                        <div>
+                            <h3>Services</h3>
+                            <p className="card-subtitle">Manage service menu, pricing, and duration</p>
+                        </div>
                         <button className="btn btn-primary btn-sm" onClick={() => setEditing({})}><Plus size={16}/> Add Service</button>
                     </div>
                     <table className="bookings-table">
@@ -630,11 +608,15 @@ function ServicesTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
                                 <tr key={s.id}>
                                     <td>{s.name}</td>
                                     <td>{s.category}</td>
-                                    <td>${s.price}</td>
+                                    <td>GH₵{s.price}</td>
                                     <td>{s.duration} min</td>
                                     <td>
-                                        <button className="btn-icon" onClick={() => setEditing(s)}><Edit2 size={16}/></button>
-                                        <button className="btn-icon danger" onClick={() => handleDelete(s.id)}><Trash2 size={16}/></button>
+                                        <div className="action-btn-flex">
+                                            <button className="btn-icon" title="Edit" onClick={() => setEditing(s)}><Edit2 size={16}/></button>
+                                            <button className="btn-icon danger" title="Delete" disabled={deletingId === s.id} onClick={() => handleDelete(s.id)}>
+                                                {deletingId === s.id ? <div className="global-spinner small" style={{ width: 12, height: 12, borderWidth: 2 }} /> : <Trash2 size={16}/>}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -646,23 +628,27 @@ function ServicesTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
     );
 }
 
-function ServiceForm({ service, onCancel, onSuccess, getAccessTokenSilently, showToast }: any) {
+function ServiceForm({ salon, service, onCancel, onSuccess, getAccessTokenSilently, showToast }: any) {
     const [formData, setFormData] = useState(service || { name: '', category: 'Haircare', price: 0, duration: 30, description: '' });
+    const [saving, setSaving] = useState(false);
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSaving(true);
         try {
             const token = await getAccessTokenSilently();
             if (service?.id) {
                 await updateSalonService(token, service.id, { ...formData, price: Number(formData.price), duration: Number(formData.duration) });
                 showToast('Service updated', 'success');
             } else {
-                await createSalonService(token, { ...formData, price: Number(formData.price), duration: Number(formData.duration) });
+                await createSalonService(token, { ...formData, salonId: salon?.id, price: Number(formData.price), duration: Number(formData.duration) });
                 showToast('Service created', 'success');
             }
             onSuccess();
         } catch(e) {
             showToast('Failed to save service', 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -679,7 +665,7 @@ function ServiceForm({ service, onCancel, onSuccess, getAccessTokenSilently, sho
             </div>
             <div className="form-row">
                 <div className="form-group">
-                    <label>Price ($)</label>
+                    <label>Price (GH₵)</label>
                     <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required min="0" />
                 </div>
                 <div className="form-group">
@@ -688,8 +674,11 @@ function ServiceForm({ service, onCancel, onSuccess, getAccessTokenSilently, sho
                 </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-                <button type="submit" className="btn btn-primary">Save</button>
-                <button type="button" className="btn btn-outline" onClick={onCancel}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }} disabled={saving}>
+                    {saving && <div className="global-spinner small" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+                    {saving ? 'Saving...' : (service?.id ? 'Save Service' : 'Add Service')}
+                </button>
+                <button type="button" className="btn btn-outline" onClick={onCancel} disabled={saving}>Cancel</button>
             </div>
         </form>
     );
@@ -700,9 +689,11 @@ function ServiceForm({ service, onCancel, onSuccess, getAccessTokenSilently, sho
 // ---------------------------------------------------------
 function StylistsTab({ salon, reload, getAccessTokenSilently, showToast }: any) {
     const [editing, setEditing] = useState<any>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this stylist?')) return;
+        setDeletingId(id);
         try {
             const token = await getAccessTokenSilently();
             await deleteSalonStylist(token, id);
@@ -710,6 +701,8 @@ function StylistsTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
             reload();
         } catch(e) {
             showToast('Failed to delete', 'error');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -717,6 +710,7 @@ function StylistsTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
         <div className="fade-in">
             {editing ? (
                 <StylistForm 
+                    salon={salon}
                     stylist={editing.id ? editing : null} 
                     onCancel={() => setEditing(null)} 
                     onSuccess={() => { setEditing(null); reload(); }} 
@@ -725,8 +719,11 @@ function StylistsTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
                 />
             ) : (
                 <div className="recent-bookings-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <h3>Stylists</h3>
+                    <div className="card-header-flex">
+                        <div>
+                            <h3>Stylists & Staff</h3>
+                            <p className="card-subtitle">Manage staff members, roles, and specialties</p>
+                        </div>
                         <button className="btn btn-primary btn-sm" onClick={() => setEditing({})}><Plus size={16}/> Add Stylist</button>
                     </div>
                     <table className="bookings-table">
@@ -750,8 +747,12 @@ function StylistsTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
                                     <td>{s.role}</td>
                                     <td>{s.specialties?.join(', ') || '-'}</td>
                                     <td>
-                                        <button className="btn-icon" onClick={() => setEditing(s)}><Edit2 size={16}/></button>
-                                        <button className="btn-icon danger" onClick={() => handleDelete(s.id)}><Trash2 size={16}/></button>
+                                        <div className="action-btn-flex">
+                                            <button className="btn-icon" title="Edit" onClick={() => setEditing(s)}><Edit2 size={16}/></button>
+                                            <button className="btn-icon danger" title="Delete" disabled={deletingId === s.id} onClick={() => handleDelete(s.id)}>
+                                                {deletingId === s.id ? <div className="global-spinner small" style={{ width: 12, height: 12, borderWidth: 2 }} /> : <Trash2 size={16}/>}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -763,8 +764,9 @@ function StylistsTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
     );
 }
 
-function StylistForm({ stylist, onCancel, onSuccess, getAccessTokenSilently, showToast }: any) {
+function StylistForm({ salon, stylist, onCancel, onSuccess, getAccessTokenSilently, showToast }: any) {
     const [formData, setFormData] = useState(stylist || { name: '', role: '', image: '', specialtiesStr: '' });
+    const [saving, setSaving] = useState(false);
     
     // Convert specialties array to string for editing
     useEffect(() => {
@@ -775,8 +777,9 @@ function StylistForm({ stylist, onCancel, onSuccess, getAccessTokenSilently, sho
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSaving(true);
         const specialties = formData.specialtiesStr.split(',').map((s: string) => s.trim()).filter(Boolean);
-        const payload = { ...formData, specialties };
+        const payload = { ...formData, specialties, salonId: salon?.id };
         try {
             const token = await getAccessTokenSilently();
             if (stylist?.id) {
@@ -789,6 +792,8 @@ function StylistForm({ stylist, onCancel, onSuccess, getAccessTokenSilently, sho
             onSuccess();
         } catch(e) {
             showToast('Failed to save stylist', 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -812,8 +817,11 @@ function StylistForm({ stylist, onCancel, onSuccess, getAccessTokenSilently, sho
                 <input type="text" value={formData.specialtiesStr} onChange={e => setFormData({...formData, specialtiesStr: e.target.value})} placeholder="Braids, Coloring, Extensions" />
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-                <button type="submit" className="btn btn-primary">Save</button>
-                <button type="button" className="btn btn-outline" onClick={onCancel}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }} disabled={saving}>
+                    {saving && <div className="global-spinner small" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+                    {saving ? 'Saving...' : (stylist?.id ? 'Save Stylist' : 'Add Stylist')}
+                </button>
+                <button type="button" className="btn btn-outline" onClick={onCancel} disabled={saving}>Cancel</button>
             </div>
         </form>
     );

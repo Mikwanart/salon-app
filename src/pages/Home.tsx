@@ -104,12 +104,11 @@ export default function Home() {
             <section className="hero">
                 <div className="hero-overlay" />
                 <div className="hero-content container">
-                    <p className="hero-tagline">The Premium African Beauty Experience</p>
                     <h1>
-                        Your crown, <em>perfected.</em>
+                        <span style={{ color: '#b10e6b' }}>Book</span> your style in seconds.
                     </h1>
                     <p className="hero-subtitle">
-                        Discover and book top African hair braiders, barbering, locs, and glam studios in your city. From knotless braids to raw shea facials.
+                        Discover and book top beauty & hair studios near you.
                     </p>
                     <SearchBar variant="hero" onQueryChange={setSalonQuery} />
                 </div>

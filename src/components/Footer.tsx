@@ -16,7 +16,7 @@ export default function Footer() {
                             <p>Join 5,000+ salons growing their business with SalonBook.</p>
                         </div>
                         <div className="footer-cta-actions">
-                            <Link to="/signup" className="btn btn-white">Register Your Salon</Link>
+                            <Link to="/for-salons" className="btn btn-white">Register Your Salon</Link>
                             <Link to="/about" className="btn btn-dark">Learn More</Link>
                         </div>
                     </div>
