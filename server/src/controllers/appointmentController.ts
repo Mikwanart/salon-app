@@ -5,6 +5,47 @@ import { AppointmentStatus, PaymentMethod, PaymentStatus } from '@prisma/client'
 import { momoService } from '../lib/momo';
 import { notificationService } from '../lib/notifications';
 
+/**
+ * Checks whether a proposed appointment time overlaps with any existing,
+ * non-cancelled appointment for the same stylist.
+ *
+ * Two time ranges [aStart, aEnd) and [bStart, bEnd) overlap if:
+ *   aStart < bEnd  AND  aEnd > bStart
+ */
+const findConflictingAppointment = async (
+  stylistId: string | null | undefined,
+  start: Date,
+  durationMinutes: number,
+  excludeAppointmentId?: string
+) => {
+  if (!stylistId) return null;
+
+  const end = new Date(start.getTime() + durationMinutes * 60000);
+
+  // Only fetch candidate appointments for this stylist on the same calendar day,
+  // to avoid scanning every appointment this stylist has ever had.
+  const dayStart = new Date(start);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(start);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  const candidates = await prisma.appointment.findMany({
+    where: {
+      stylistId,
+      status: { not: AppointmentStatus.CANCELLED },
+      date: { gte: dayStart, lte: dayEnd },
+      ...(excludeAppointmentId ? { id: { not: excludeAppointmentId } } : {}),
+    },
+    include: { service: { select: { duration: true } } },
+  });
+
+  return candidates.find((appt: typeof candidates[number]) => {
+    const apptStart = appt.date;
+    const apptEnd = new Date(apptStart.getTime() + appt.service.duration * 60000);
+    return start < apptEnd && end > apptStart;
+  }) || null;
+};
+
 export const createAppointment = async (req: Request, res: Response): Promise<void> => {
   try {
     const auth0Id = req.auth?.payload.sub;
@@ -47,15 +88,35 @@ export const createAppointment = async (req: Request, res: Response): Promise<vo
       return;
     }
 
+    const appointmentDate = new Date(date);
+    if (isNaN(appointmentDate.getTime())) {
+      res.status(400).json({ error: 'Invalid date format' });
+      return;
+    }
+    if (appointmentDate.getTime() < Date.now()) {
+      res.status(400).json({ error: 'Appointment date must be in the future' });
+      return;
+    }
+
+    const service = await prisma.service.findUnique({ where: { id: serviceId } });
+    if (!service || service.salonId !== salonId) {
+      res.status(404).json({ error: 'Service not found for this salon' });
+      return;
+    }
+
+    if (stylistId) {
+      const conflict = await findConflictingAppointment(stylistId, appointmentDate, service.duration);
+      if (conflict) {
+        res.status(409).json({
+          error: 'This stylist is already booked during that time. Please choose a different time or stylist.',
+        });
+        return;
+      }
+    }
+
     // Real MTN MoMo Collection trigger
     let momoTxnId: string | null = null;
     if (paymentMethod === 'MOMO') {
-      const service = await prisma.service.findUnique({ where: { id: serviceId } });
-      if (!service) {
-        res.status(404).json({ error: 'Service not found' });
-        return;
-      }
-
       const phoneForMomo = paymentDetails || user.phone || '';
       if (!phoneForMomo) {
         res.status(400).json({ error: 'Phone number is required for MTN MoMo payment' });
@@ -75,7 +136,7 @@ export const createAppointment = async (req: Request, res: Response): Promise<vo
 
     const appointment = await prisma.appointment.create({
       data: {
-        date: new Date(date),
+        date: appointmentDate,
         notes,
         clientId: user.id,
         salonId,
@@ -188,7 +249,29 @@ export const updateAppointment = async (req: Request, res: Response): Promise<vo
 
     const updateData: any = {};
     if (date) {
-      updateData.date = new Date(date);
+      const newDate = new Date(date);
+      if (isNaN(newDate.getTime())) {
+        res.status(400).json({ error: 'Invalid date format' });
+        return;
+      }
+      if (newDate.getTime() < Date.now()) {
+        res.status(400).json({ error: 'Appointment date must be in the future' });
+        return;
+      }
+
+      if (appointment.stylistId) {
+        const service = await prisma.service.findUnique({ where: { id: appointment.serviceId } });
+        const duration = service?.duration ?? 30;
+        const conflict = await findConflictingAppointment(appointment.stylistId, newDate, duration, appointment.id);
+        if (conflict) {
+          res.status(409).json({
+            error: 'This stylist is already booked during that time. Please choose a different time.',
+          });
+          return;
+        }
+      }
+
+      updateData.date = newDate;
     }
     if (paymentStatus) {
       if (!Object.values(PaymentStatus).includes(paymentStatus as PaymentStatus)) {
