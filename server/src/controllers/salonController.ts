@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { autoSeedSalons } from '../lib/autoSeed';
+import { validateWorkingHoursShape } from '../lib/workingHours';
 
 /**
  * Robust helper to retrieve user from DB via auth0Id with automatic email fallback
@@ -342,7 +343,11 @@ export const createSalonStylist = async (req: Request, res: Response): Promise<v
     const user = await getUserFromReq(req);
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-    const { salonId, name, role, image, specialties } = req.body;
+    const { salonId, name, role, image, specialties, workingHours } = req.body;
+
+    const hoursError = validateWorkingHoursShape(workingHours);
+    if (hoursError) { res.status(400).json({ error: hoursError }); return; }
+
     const targetId = salonId || req.query.salonId;
     const salon = targetId
       ? await prisma.salon.findFirst({ where: { id: String(targetId), ownerId: user.id } })
@@ -351,7 +356,7 @@ export const createSalonStylist = async (req: Request, res: Response): Promise<v
     if (!salon) { res.status(404).json({ error: 'No salon found' }); return; }
 
     const stylist = await prisma.stylist.create({
-      data: { name, role, image, specialties: specialties || [], salonId: salon.id },
+      data: { name, role, image, specialties: specialties || [], salonId: salon.id, workingHours: workingHours ?? undefined },
     });
 
     res.json(stylist);
@@ -375,11 +380,14 @@ export const updateSalonStylist = async (req: Request, res: Response): Promise<v
       res.status(403).json({ error: 'Unauthorized to edit this stylist' }); return;
     }
 
-    const { name, role, image, specialties } = req.body;
+    const { name, role, image, specialties, workingHours } = req.body;
+
+    const hoursError = validateWorkingHoursShape(workingHours);
+    if (hoursError) { res.status(400).json({ error: hoursError }); return; }
 
     const updated = await prisma.stylist.update({
       where: { id: String(id) },
-      data: { name, role, image, specialties },
+      data: { name, role, image, specialties, workingHours: workingHours ?? undefined },
     });
 
     res.json(updated);

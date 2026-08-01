@@ -542,3 +542,56 @@
 .select-salon-dropdown:focus {
     border-color: var(--primary);
 }
+
+/* Working hours editor (Stylist form) */
+.working-hours-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border: 1px solid rgba(177, 14, 107, 0.12);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+}
+
+.working-hours-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(177, 14, 107, 0.06);
+}
+
+.working-hours-row:last-child {
+    border-bottom: none;
+}
+
+.working-hours-day-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    min-width: 130px;
+    cursor: pointer;
+}
+
+.working-hours-times {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.working-hours-times input[type="time"] {
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.4rem;
+    border: 1px solid rgba(177, 14, 107, 0.2);
+    background: var(--surface-card);
+    color: var(--on-surface);
+}
+
+.working-hours-off {
+    color: var(--on-surface-muted, #888);
+    font-size: 0.875rem;
+    font-style: italic;
+}

@@ -764,8 +764,25 @@ function StylistsTab({ salon, reload, getAccessTokenSilently, showToast }: any) 
     );
 }
 
+const WORKING_DAYS = [
+    { key: 'mon', label: 'Monday' },
+    { key: 'tue', label: 'Tuesday' },
+    { key: 'wed', label: 'Wednesday' },
+    { key: 'thu', label: 'Thursday' },
+    { key: 'fri', label: 'Friday' },
+    { key: 'sat', label: 'Saturday' },
+    { key: 'sun', label: 'Sunday' },
+];
+
+const defaultWorkingHours = () =>
+    WORKING_DAYS.reduce((acc: any, d) => {
+        acc[d.key] = d.key === 'sun' ? null : { start: '09:00', end: '18:00' };
+        return acc;
+    }, {});
+
 function StylistForm({ salon, stylist, onCancel, onSuccess, getAccessTokenSilently, showToast }: any) {
     const [formData, setFormData] = useState(stylist || { name: '', role: '', image: '', specialtiesStr: '' });
+    const [workingHours, setWorkingHours] = useState<any>(stylist?.workingHours || defaultWorkingHours());
     const [saving, setSaving] = useState(false);
     
     // Convert specialties array to string for editing
@@ -773,13 +790,28 @@ function StylistForm({ salon, stylist, onCancel, onSuccess, getAccessTokenSilent
         if (stylist?.specialties) {
             setFormData((prev: any) => ({ ...prev, specialtiesStr: stylist.specialties.join(', ') }));
         }
+        setWorkingHours(stylist?.workingHours || defaultWorkingHours());
     }, [stylist]);
+
+    const toggleDay = (dayKey: string, isWorking: boolean) => {
+        setWorkingHours((prev: any) => ({
+            ...prev,
+            [dayKey]: isWorking ? { start: '09:00', end: '18:00' } : null,
+        }));
+    };
+
+    const updateDayTime = (dayKey: string, field: 'start' | 'end', value: string) => {
+        setWorkingHours((prev: any) => ({
+            ...prev,
+            [dayKey]: { ...(prev[dayKey] || { start: '09:00', end: '18:00' }), [field]: value },
+        }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         const specialties = formData.specialtiesStr.split(',').map((s: string) => s.trim()).filter(Boolean);
-        const payload = { ...formData, specialties, salonId: salon?.id };
+        const payload = { ...formData, specialties, salonId: salon?.id, workingHours };
         try {
             const token = await getAccessTokenSilently();
             if (stylist?.id) {
@@ -816,6 +848,46 @@ function StylistForm({ salon, stylist, onCancel, onSuccess, getAccessTokenSilent
                 <label>Specialties (comma separated)</label>
                 <input type="text" value={formData.specialtiesStr} onChange={e => setFormData({...formData, specialtiesStr: e.target.value})} placeholder="Braids, Coloring, Extensions" />
             </div>
+
+            <div className="form-group">
+                <label>Working Hours</label>
+                <div className="working-hours-editor">
+                    {WORKING_DAYS.map(({ key, label }) => {
+                        const dayHours = workingHours[key];
+                        const isWorking = !!dayHours;
+                        return (
+                            <div key={key} className="working-hours-row">
+                                <label className="working-hours-day-toggle">
+                                    <input
+                                        type="checkbox"
+                                        checked={isWorking}
+                                        onChange={(e) => toggleDay(key, e.target.checked)}
+                                    />
+                                    {label}
+                                </label>
+                                {isWorking ? (
+                                    <div className="working-hours-times">
+                                        <input
+                                            type="time"
+                                            value={dayHours.start}
+                                            onChange={(e) => updateDayTime(key, 'start', e.target.value)}
+                                        />
+                                        <span>to</span>
+                                        <input
+                                            type="time"
+                                            value={dayHours.end}
+                                            onChange={(e) => updateDayTime(key, 'end', e.target.value)}
+                                        />
+                                    </div>
+                                ) : (
+                                    <span className="working-hours-off">Day off</span>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                 <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }} disabled={saving}>
                     {saving && <div className="global-spinner small" style={{ width: 14, height: 14, borderWidth: 2 }} />}

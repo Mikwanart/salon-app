@@ -102,6 +102,7 @@ model Stylist {
   specialties  String[]
   salonId      String
   isActive     Boolean       @default(true)
+  workingHours Json?
   appointments Appointment[]
   salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
 }

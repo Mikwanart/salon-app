@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import { AppointmentStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { momoService } from '../lib/momo';
 import { notificationService } from '../lib/notifications';
+import { checkWithinWorkingHours, type WorkingHours } from '../lib/workingHours';
 
 /**
  * Checks whether a proposed appointment time overlaps with any existing,
@@ -105,6 +106,22 @@ export const createAppointment = async (req: Request, res: Response): Promise<vo
     }
 
     if (stylistId) {
+      const stylist = await prisma.stylist.findUnique({ where: { id: stylistId } });
+      if (!stylist || stylist.salonId !== salonId) {
+        res.status(404).json({ error: 'Stylist not found for this salon' });
+        return;
+      }
+
+      const hoursCheck = checkWithinWorkingHours(
+        stylist.workingHours as WorkingHours | null,
+        appointmentDate,
+        service.duration
+      );
+      if (!hoursCheck.ok) {
+        res.status(400).json({ error: hoursCheck.reason });
+        return;
+      }
+
       const conflict = await findConflictingAppointment(stylistId, appointmentDate, service.duration);
       if (conflict) {
         res.status(409).json({
@@ -262,6 +279,18 @@ export const updateAppointment = async (req: Request, res: Response): Promise<vo
       if (appointment.stylistId) {
         const service = await prisma.service.findUnique({ where: { id: appointment.serviceId } });
         const duration = service?.duration ?? 30;
+
+        const stylist = await prisma.stylist.findUnique({ where: { id: appointment.stylistId } });
+        const hoursCheck = checkWithinWorkingHours(
+          stylist?.workingHours as WorkingHours | null,
+          newDate,
+          duration
+        );
+        if (!hoursCheck.ok) {
+          res.status(400).json({ error: hoursCheck.reason });
+          return;
+        }
+
         const conflict = await findConflictingAppointment(appointment.stylistId, newDate, duration, appointment.id);
         if (conflict) {
           res.status(409).json({
