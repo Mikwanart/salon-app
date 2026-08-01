@@ -24,6 +24,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-oauth2-jwt-bearer": "^1.8.0",
+    "node-cron": "^4.6.0",
     "nodemailer": "^9.0.3",
     "pg": "^8.22.0",
     "prisma": "^5.22.0",
@@ -32,6 +33,7 @@
     "typescript": "^5.7.2"
   },
   "devDependencies": {
+    "@types/node-cron": "^3.0.11",
     "nodemon": "^3.1.14"
   }
 }

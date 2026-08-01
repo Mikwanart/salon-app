@@ -76,6 +76,7 @@ model Appointment {
   paymentMethod  PaymentMethod     @default(CASH)
   paymentStatus  PaymentStatus     @default(PENDING)
   transactionId  String?
+  reminderSentAt DateTime?
   client         User              @relation("ClientBookings", fields: [clientId], references: [id])
   salon          Salon             @relation(fields: [salonId], references: [id])
   service        Service           @relation(fields: [serviceId], references: [id])

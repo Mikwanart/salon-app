@@ -8,6 +8,7 @@ import appointmentRoutes from './routes/appointmentRoutes';
 import reviewRoutes from './routes/reviewRoutes';
 import adminRoutes from './routes/adminRoutes';
 import { autoSeedSalons } from './lib/autoSeed';
+import { startReminderScheduler } from './lib/reminders';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -50,4 +51,5 @@ process.on('exit', (code) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
   autoSeedSalons().catch((err) => console.error('Error during auto-seed:', err));
+  startReminderScheduler();
 });

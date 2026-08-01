@@ -621,6 +621,110 @@ class NotificationService {
       await this.sendSms(clientPhone, `Hi ${clientName}, your booking request for ${serviceName} at ${salonName} on ${dateStr} was declined by the salon.`);
     }
   }
+
+  /**
+   * Sends a reminder email and SMS roughly 24 hours before an upcoming appointment.
+   */
+  async sendAppointmentReminder(appointment: any): Promise<void> {
+    const clientEmail = appointment.client?.email || 'test@example.com';
+    let clientPhone = appointment.client?.phone || '';
+    if (!clientPhone && appointment.paymentDetails) {
+      const pd = String(appointment.paymentDetails).trim();
+      if (/^[\+0-9][\d\s\-\(\)]{6,}$/.test(pd)) {
+        clientPhone = pd;
+      }
+    }
+
+    const clientName = appointment.client?.name || 'Valued Client';
+    const serviceName = appointment.service?.name || 'Salon Service';
+    const stylistName = appointment.stylist?.name || 'Any Stylist';
+    const salonName = appointment.salon?.name || 'Lumière Salon';
+    const salonAddress = appointment.salon?.address || '';
+
+    const dateStr = new Date(appointment.date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const timeStr = new Date(appointment.date).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    try {
+      const transporter = await this.getTransporter();
+      const from = process.env.SMTP_FROM || 'Lumière Salon <no-reply@lumiere-salon.com>';
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Inter', sans-serif; background-color: #f7fafc; color: #1a202c; padding: 24px; margin: 0; }
+            .container { max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; margin: 0 auto; border: 1px solid #edf2f7; }
+            .header { background: linear-gradient(135deg, #b10e6b 0%, #e91e8c 100%); color: #ffffff; padding: 32px 24px; text-align: center; }
+            .header h1 { margin: 0; font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; }
+            .body { padding: 32px 24px; }
+            .greeting { font-size: 1.1rem; margin-bottom: 20px; font-weight: 600; }
+            .details-card { background-color: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #e2e8f0; }
+            .details-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem; }
+            .label { color: #64748b; }
+            .value { color: #0f172a; text-align: right; }
+            .instructions { font-size: 0.9rem; color: #64748b; line-height: 1.6; margin-bottom: 24px; }
+            .footer { text-align: center; padding: 24px; font-size: 0.8rem; color: #94a3b8; background-color: #f8fafc; border-top: 1px solid #edf2f7; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>See You Soon!</h1>
+            </div>
+            <div class="body">
+              <p class="greeting">Hi ${clientName},</p>
+              <p>This is a friendly reminder that your appointment at <strong>${salonName}</strong> is coming up in about 24 hours.</p>
+              
+              <div class="details-card">
+                <div class="details-row"><span class="label">Service</span><span class="value">${serviceName}</span></div>
+                <div class="details-row"><span class="label">Date</span><span class="value">${dateStr}</span></div>
+                <div class="details-row"><span class="label">Time</span><span class="value">${timeStr}</span></div>
+                <div class="details-row"><span class="label">Stylist</span><span class="value">${stylistName}</span></div>
+                <div class="details-row"><span class="label">Salon Address</span><span class="value">${salonAddress}</span></div>
+              </div>
+              
+              <p class="instructions">Need to reschedule or cancel? Please visit your profile dashboard as soon as possible so we can offer the slot to someone else.</p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} ${salonName}. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const info = await transporter.sendMail({
+        from,
+        to: clientEmail,
+        subject: `Reminder: ${serviceName} tomorrow at ${timeStr}`,
+        html: htmlContent
+      });
+
+      console.log(`⏰ Reminder email sent to: ${clientEmail} (ID: ${info.messageId})`);
+      const testUrl = nodemailer.getTestMessageUrl(info);
+      if (testUrl) {
+        console.log(`🔗 [DEVELOPER MAILBOX] View sent reminder HTML email: ${testUrl}`);
+      }
+    } catch (err: any) {
+      console.error('❌ Failed to send appointment reminder email:', err.message || err);
+    }
+
+    if (clientPhone) {
+      const smsBody = `Hi ${clientName}, reminder: your ${serviceName} appointment at ${salonName} is tomorrow (${dateStr}) at ${timeStr}.`;
+      await this.sendSms(clientPhone, smsBody);
+    }
+  }
 }
 
 
