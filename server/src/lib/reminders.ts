@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { prisma } from './prisma';
 import { notificationService } from './notifications';
+import { notifyUser } from './pushNotifications';
 
 /**
  * Finds appointments happening roughly 24 hours from now that haven't had a
@@ -24,6 +25,11 @@ export const sendDueReminders = async (): Promise<number> => {
   for (const appointment of dueAppointments) {
     try {
       await notificationService.sendAppointmentReminder(appointment);
+      await notifyUser(
+        appointment.clientId,
+        `Reminder: your ${appointment.service?.name || 'appointment'} at ${appointment.salon?.name || 'the salon'} is tomorrow.`,
+        { type: 'info', appointmentId: appointment.id, salonName: appointment.salon?.name }
+      );
       await prisma.appointment.update({
         where: { id: appointment.id },
         data: { reminderSentAt: new Date() },

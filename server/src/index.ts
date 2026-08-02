@@ -1,4 +1,5 @@
 import 'dotenv/config'; // Must be first — loads .env before any other module initialises
+import http from 'http';
 import express from 'express';
 import cors from 'cors';
 
@@ -7,8 +8,10 @@ import userRoutes from './routes/userRoutes';
 import appointmentRoutes from './routes/appointmentRoutes';
 import reviewRoutes from './routes/reviewRoutes';
 import adminRoutes from './routes/adminRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import { autoSeedSalons } from './lib/autoSeed';
 import { startReminderScheduler } from './lib/reminders';
+import { initSocket } from './lib/socket';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -39,6 +42,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 process.on('beforeExit', (code) => {
   console.log('DEBUG: process beforeExit event with code:', code);
@@ -48,7 +52,10 @@ process.on('exit', (code) => {
   console.log('DEBUG: process exit event with code:', code);
 });
 
-app.listen(port, () => {
+const server = http.createServer(app);
+initSocket(server);
+
+server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
   autoSeedSalons().catch((err) => console.error('Error during auto-seed:', err));
   startReminderScheduler();

@@ -5,6 +5,7 @@ import { AppointmentStatus, PaymentMethod, PaymentStatus } from '@prisma/client'
 import { momoService } from '../lib/momo';
 import { notificationService } from '../lib/notifications';
 import { checkWithinWorkingHours, type WorkingHours } from '../lib/workingHours';
+import { notifyUser } from '../lib/pushNotifications';
 
 /**
  * Checks whether a proposed appointment time overlaps with any existing,
@@ -460,6 +461,17 @@ const triggerOwnerNewBookingNotification = async (appointmentId: string) => {
     });
     if (fullAppt) {
       await notificationService.sendOwnerNewBookingNotification(fullAppt);
+      await notifyUser(
+        fullAppt.salon.ownerId,
+        `New booking request from ${fullAppt.client?.name || 'a client'} for ${fullAppt.service?.name || 'a service'}.`,
+        {
+          type: 'warning',
+          appointmentId: fullAppt.id,
+          status: 'PENDING',
+          salonName: fullAppt.salon?.name,
+          actions: ['accept', 'decline'],
+        }
+      );
     }
   } catch (err) {
     console.error('Failed to trigger owner new booking notification:', err);
@@ -479,6 +491,11 @@ const triggerAcceptedNotification = async (appointmentId: string) => {
     });
     if (fullAppt) {
       await notificationService.sendBookingAccepted(fullAppt);
+      await notifyUser(
+        fullAppt.clientId,
+        `${fullAppt.salon?.name || 'The salon'} accepted your booking for ${fullAppt.service?.name || 'your service'}!`,
+        { type: 'success', appointmentId: fullAppt.id, status: 'CONFIRMED', salonName: fullAppt.salon?.name }
+      );
     }
   } catch (err) {
     console.error('Failed to trigger accepted notification:', err);
@@ -498,6 +515,11 @@ const triggerConfirmationNotification = async (appointmentId: string) => {
     });
     if (fullAppt) {
       await notificationService.sendBookingConfirmation(fullAppt);
+      await notifyUser(
+        fullAppt.clientId,
+        `Your booking for ${fullAppt.service?.name || 'a service'} at ${fullAppt.salon?.name || 'the salon'} is confirmed.`,
+        { type: 'success', appointmentId: fullAppt.id, status: 'CONFIRMED', salonName: fullAppt.salon?.name }
+      );
     }
   } catch (err) {
     console.error('Failed to trigger confirmation notification:', err);
@@ -517,6 +539,11 @@ const triggerCancellationNotification = async (appointmentId: string) => {
     });
     if (fullAppt) {
       await notificationService.sendBookingDeclined(fullAppt);
+      await notifyUser(
+        fullAppt.clientId,
+        `${fullAppt.salon?.name || 'The salon'} declined your booking request for ${fullAppt.service?.name || 'the service'}.`,
+        { type: 'error', appointmentId: fullAppt.id, status: 'CANCELLED', salonName: fullAppt.salon?.name }
+      );
     }
   } catch (err) {
     console.error('Failed to trigger cancellation notification:', err);

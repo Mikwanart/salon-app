@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useAuth } from './AuthContext';
+import { connectSocket, disconnectSocket } from '../lib/socket';
+import { fetchMyNotifications, markAllNotificationsReadOnServer, clearNotificationsOnServer } from '../lib/api';
 
 export interface Notification {
     id: string;
@@ -32,6 +35,7 @@ const getStorageKey = (email?: string) => `salon_notifs_${email?.toLowerCase() |
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
+    const { getAccessTokenSilently, isAuthenticated } = useAuth0();
     const currentEmail = user?.email;
     const cleanCurrentEmail = currentEmail?.toLowerCase();
 
@@ -103,6 +107,83 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         };
     }, [cleanCurrentEmail]);
 
+    // Real-time notifications: connect to the backend over WebSockets so new
+    // notifications (new bookings, accept/decline, reminders) appear instantly
+    // without polling. Also pulls persisted history from the server, so
+    // notifications survive across devices/browsers, not just this one.
+    useEffect(() => {
+        if (!isAuthenticated || !cleanCurrentEmail) {
+            disconnectSocket();
+            return;
+        }
+
+        let cancelled = false;
+
+        const setup = async () => {
+            try {
+                const token = await getAccessTokenSilently();
+                if (cancelled) return;
+
+                // Pull notifications that arrived while offline / on another device.
+                try {
+                    const serverNotifs = await fetchMyNotifications(token);
+                    if (!cancelled && Array.isArray(serverNotifs)) {
+                        setNotifications(prev => {
+                            const existingIds = new Set(prev.map(n => n.id));
+                            const merged: Notification[] = serverNotifs
+                                .filter((n: any) => !existingIds.has(n.id))
+                                .map((n: any) => ({
+                                    id: n.id,
+                                    message: n.message,
+                                    type: (n.type || 'info') as Notification['type'],
+                                    timestamp: new Date(n.createdAt).getTime(),
+                                    read: n.read,
+                                    targetUserEmail: cleanCurrentEmail,
+                                }));
+                            if (merged.length === 0) return prev;
+                            return [...merged, ...prev]
+                                .sort((a, b) => b.timestamp - a.timestamp)
+                                .slice(0, 30);
+                        });
+                    }
+                } catch (err) {
+                    console.warn('Failed to fetch notification history:', err);
+                }
+
+                if (cancelled) return;
+                const socket = connectSocket(token);
+
+                socket.on('notification:new', (payload: any) => {
+                    setNotifications(prev => {
+                        if (prev.some(n => n.id === payload.id)) return prev;
+                        const notif: Notification = {
+                            id: payload.id,
+                            message: payload.message,
+                            type: (payload.type || 'info') as Notification['type'],
+                            timestamp: payload.createdAt ? new Date(payload.createdAt).getTime() : Date.now(),
+                            read: false,
+                            targetUserEmail: cleanCurrentEmail,
+                            appointmentId: payload.appointmentId,
+                            status: payload.status,
+                            salonName: payload.salonName,
+                            actions: payload.actions,
+                        };
+                        return [notif, ...prev].slice(0, 30);
+                    });
+                });
+            } catch (err) {
+                console.warn('Failed to set up real-time notifications:', err);
+            }
+        };
+
+        setup();
+
+        return () => {
+            cancelled = true;
+            disconnectSocket();
+        };
+    }, [isAuthenticated, cleanCurrentEmail, getAccessTokenSilently]);
+
     const addNotification = useCallback((message: string, type: Notification['type'] = 'info', extra: Partial<Notification> = {}) => {
         if (!cleanCurrentEmail) return;
         const notif: Notification = {
@@ -158,11 +239,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     const markAllRead = useCallback(() => {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    }, []);
+        getAccessTokenSilently()
+            .then(markAllNotificationsReadOnServer)
+            .catch(err => console.warn('Failed to sync read-state with server:', err));
+    }, [getAccessTokenSilently]);
 
     const clearAll = useCallback(() => {
         setNotifications([]);
-    }, []);
+        getAccessTokenSilently()
+            .then(clearNotificationsOnServer)
+            .catch(err => console.warn('Failed to clear notifications on server:', err));
+    }, [getAccessTokenSilently]);
 
     const updateNotificationActionStatus = useCallback((appointmentId: string, status: 'CONFIRMED' | 'CANCELLED') => {
         setNotifications(prev => prev.map(n => {

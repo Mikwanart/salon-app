@@ -332,3 +332,29 @@ export const fetchAdminAppointments = async (token: string, status: string = 'AL
   return response.json();
 };
 
+
+// ----- Notification history (backend-persisted, delivered live via WebSockets) -----
+
+export const fetchMyNotifications = async (token: string) => {
+  const response = await fetch(`${API_URL}/notifications`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch notifications');
+  return response.json();
+};
+
+export const markAllNotificationsReadOnServer = async (token: string) => {
+  const response = await fetch(`${API_URL}/notifications/mark-all-read`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to mark notifications read');
+};
+
+export const clearNotificationsOnServer = async (token: string) => {
+  const response = await fetch(`${API_URL}/notifications`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to clear notifications');
+};

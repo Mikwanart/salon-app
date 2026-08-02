@@ -24,15 +24,19 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-oauth2-jwt-bearer": "^1.8.0",
+    "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^4.1.0",
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.3",
     "pg": "^8.22.0",
     "prisma": "^5.22.0",
+    "socket.io": "^4.8.3",
     "ts-node": "^10.9.2",
     "twilio": "^6.0.2",
     "typescript": "^5.7.2"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node-cron": "^3.0.11",
     "nodemon": "^3.1.14"
   }
