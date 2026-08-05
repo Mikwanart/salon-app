@@ -162,6 +162,11 @@ export default function Booking() {
             };
 
             const result = await createAppointment(bookingData, token);
+
+            if (result.paystackAuthorizationUrl) {
+                window.open(result.paystackAuthorizationUrl, '_blank', 'noopener,noreferrer');
+            }
+
             setPaymentSimulationStep('momo-prompt');
             startMomoPolling(result.id, token);
 
@@ -592,8 +597,8 @@ export default function Booking() {
                             </div>
                             <div className="p-6 text-center">
                                 <RefreshCw size={40} className="animate-spin text-primary mx-auto mb-4" />
-                                <h4 className="font-bold text-lg mb-2">Authorize Payment</h4>
-                                <p className="text-sm text-gray-600 mb-2">Check your phone and approve the charge for {momoPhone}</p>
+                                <h4 className="font-bold text-lg mb-2">Complete Your Payment</h4>
+                                <p className="text-sm text-gray-600 mb-2">A secure payment tab has opened. Complete the charge there, then return here — we'll detect it automatically.</p>
                                 <p className="font-bold text-lg mb-6">GH₵{bookedServiceDetails?.price}</p>
                                 <div className="bg-primary/10 text-primary text-sm font-bold py-2 px-4 rounded-lg inline-block mb-6">
                                     Waiting for approval ({momoCountdown}s)

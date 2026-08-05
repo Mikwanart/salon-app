@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import { AppointmentStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
-import { momoService } from '../lib/momo';
+import * as paystackService from '../lib/paystack';
 import { notificationService } from '../lib/notifications';
 import { checkWithinWorkingHours, type WorkingHours } from '../lib/workingHours';
 import { notifyUser } from '../lib/pushNotifications';
@@ -132,22 +132,32 @@ export const createAppointment = async (req: Request, res: Response): Promise<vo
       }
     }
 
-    // Real MTN MoMo Collection trigger
-    let momoTxnId: string | null = null;
+    // Real payment: MTN MoMo / card, actually collected through Paystack's
+    // hosted checkout (Paystack itself talks to MTN/Vodafone/AirtelTigo/card
+    // networks on our behalf — we never see or touch PINs or card numbers).
+    let paystackReference: string | null = null;
+    let paystackAuthorizationUrl: string | null = null;
     if (paymentMethod === 'MOMO') {
-      const phoneForMomo = paymentDetails || user.phone || '';
-      if (!phoneForMomo) {
-        res.status(400).json({ error: 'Phone number is required for MTN MoMo payment' });
+      if (!user.email) {
+        res.status(400).json({ error: 'An email address is required to process payment' });
         return;
       }
 
-      momoTxnId = crypto.randomUUID();
+      paystackReference = `salon_${crypto.randomUUID()}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
       try {
-        await momoService.requestToPay(momoTxnId, service.price.toString(), phoneForMomo);
+        const init = await paystackService.initializeTransaction({
+          email: user.email,
+          amountCedis: service.price,
+          reference: paystackReference,
+          callbackUrl: `${frontendUrl}/dashboard`,
+          metadata: { salonId, serviceId, userId: user.id },
+        });
+        paystackAuthorizationUrl = init.authorizationUrl;
       } catch (err: any) {
-        console.error('Failed to trigger request to pay on MTN gateway:', err);
-        res.status(502).json({ error: `MTN MoMo API Error: ${err.message || 'Failed to initiate charge request'}` });
+        console.error('Failed to initialize Paystack transaction:', err);
+        res.status(502).json({ error: `Payment initialization failed: ${err.message || 'Unknown error'}` });
         return;
       }
     }
@@ -162,8 +172,8 @@ export const createAppointment = async (req: Request, res: Response): Promise<vo
         stylistId: stylistId || null,
         paymentMethod: paymentMethod ? (paymentMethod as PaymentMethod) : undefined,
         paymentStatus: paymentMethod === 'MOMO' ? 'PENDING' : (paymentStatus ? (paymentStatus as PaymentStatus) : undefined),
-        paymentDetails: paymentMethod === 'MOMO' ? (paymentDetails || null) : (paymentDetails || null),
-        transactionId: paymentMethod === 'MOMO' ? momoTxnId : (transactionId || null),
+        paymentDetails: paymentDetails || null,
+        transactionId: paymentMethod === 'MOMO' ? paystackReference : (transactionId || null),
       },
     });
 
@@ -174,7 +184,10 @@ export const createAppointment = async (req: Request, res: Response): Promise<vo
       triggerConfirmationNotification(appointment.id);
     }
 
-    res.status(201).json(appointment);
+    res.status(201).json({
+      ...appointment,
+      paystackAuthorizationUrl: paystackAuthorizationUrl || undefined,
+    });
   } catch (error) {
     console.error('Error creating appointment:', error);
     res.status(500).json({ error: 'Failed to create appointment' });
@@ -394,27 +407,27 @@ export const verifyPaymentStatus = async (req: Request, res: Response): Promise<
 
     // If it's cash or already paid, return early
     if (appointment.paymentMethod === 'CASH') {
-      res.json({ status: appointment.status, paymentStatus: appointment.paymentStatus });
+      res.json({ status: appointment.status, paymentStatus: appointment.paymentStatus, transactionId: appointment.transactionId });
       return;
     }
 
     if (appointment.paymentStatus === 'PAID' || appointment.paymentStatus === 'REFUNDED') {
-      res.json({ status: appointment.status, paymentStatus: appointment.paymentStatus });
+      res.json({ status: appointment.status, paymentStatus: appointment.paymentStatus, transactionId: appointment.transactionId });
       return;
     }
 
     if (appointment.paymentMethod === 'MOMO' && appointment.transactionId) {
       try {
-        const momoStatus = await momoService.getTransactionStatus(appointment.transactionId);
-        
+        const verified = await paystackService.verifyTransaction(appointment.transactionId);
+
         let dbPaymentStatus: PaymentStatus = appointment.paymentStatus;
         let dbAppointmentStatus: AppointmentStatus = appointment.status;
 
-        if (momoStatus === 'SUCCESSFUL') {
+        if (verified.status === 'success') {
           dbPaymentStatus = PaymentStatus.PAID;
           dbAppointmentStatus = AppointmentStatus.CONFIRMED;
           triggerConfirmationNotification(appointment.id);
-        } else if (momoStatus === 'FAILED') {
+        } else if (verified.status === 'failed' || verified.status === 'abandoned') {
           dbPaymentStatus = PaymentStatus.FAILED;
           dbAppointmentStatus = AppointmentStatus.CANCELLED;
         }
@@ -429,16 +442,16 @@ export const verifyPaymentStatus = async (req: Request, res: Response): Promise<
           });
         }
 
-        res.json({ status: dbAppointmentStatus, paymentStatus: dbPaymentStatus });
+        res.json({ status: dbAppointmentStatus, paymentStatus: dbPaymentStatus, transactionId: appointment.transactionId });
         return;
       } catch (err) {
-        console.error('Failed to verify status with MTN:', err);
-        res.json({ status: appointment.status, paymentStatus: appointment.paymentStatus });
+        console.error('Failed to verify status with Paystack:', err);
+        res.json({ status: appointment.status, paymentStatus: appointment.paymentStatus, transactionId: appointment.transactionId });
         return;
       }
     }
 
-    res.json({ status: appointment.status, paymentStatus: appointment.paymentStatus });
+    res.json({ status: appointment.status, paymentStatus: appointment.paymentStatus, transactionId: appointment.transactionId });
   } catch (error) {
     console.error('Error verifying payment status:', error);
     res.status(500).json({ error: 'Failed to verify payment status' });
