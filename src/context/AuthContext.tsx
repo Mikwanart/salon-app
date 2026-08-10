@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { syncUserToBackend } from '../lib/api';
+import RolePickerModal from '../components/RolePickerModal';
+import type { LoginMode } from '../components/RolePickerModal';
 
 // Roles are now handled by the backend user sync
 
@@ -15,6 +17,8 @@ interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
     login: (options?: any) => void;
+    /** Opens the role-picker modal before redirecting to Auth0 */
+    openRolePicker: () => void;
     logout: () => void;
     isLoading: boolean;
     roles: string[];
@@ -41,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isSyncing, setIsSyncing] = useState(true);
     const [isEmailVerified, setIsEmailVerified] = useState(true);
+    const [rolePickerOpen, setRolePickerOpen] = useState(false);
 
     useEffect(() => {
         const syncUser = async () => {
@@ -98,13 +103,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithRedirect(options);
     };
 
+    const openRolePicker = () => {
+        setRolePickerOpen(true);
+    };
+
+    const handleRoleConfirm = (role: string, mode: LoginMode) => {
+        // Persist intended role so the backend sync / onboarding can use it
+        localStorage.setItem('intended_role', role);
+        setRolePickerOpen(false);
+        const screenHint = mode === 'signup' ? 'signup' : 'login';
+        loginWithRedirect({
+            authorizationParams: { screen_hint: screenHint },
+            appState: { intended_role: role },
+        });
+    };
+
     const logout = () => {
         auth0Logout({ logoutParams: { returnTo: window.location.origin } });
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoggedIn: isAuthenticated, login, logout, isLoading: isLoading || isSyncing, roles, isSalonOwner, isAdmin, isEmailVerified }}>
+        <AuthContext.Provider value={{ user, isLoggedIn: isAuthenticated, login, openRolePicker, logout, isLoading: isLoading || isSyncing, roles, isSalonOwner, isAdmin, isEmailVerified }}>
             {children}
+            <RolePickerModal
+                isOpen={rolePickerOpen}
+                onClose={() => setRolePickerOpen(false)}
+                onConfirm={handleRoleConfirm}
+            />
         </AuthContext.Provider>
     );
 }

@@ -7,7 +7,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useNotifications } from '../context/NotificationContext';
 import { createAppointment, fetchSalonById, fetchSalons, verifyPaymentStatus, fetchBookedSlots } from '../lib/api';
 
-import { RefreshCw, Printer, Smartphone } from 'lucide-react';
+import { RefreshCw, Printer, Smartphone, Store, Star, ExternalLink } from 'lucide-react';
 import './Booking.css';
 
 // Import new step components
@@ -504,6 +504,38 @@ export default function Booking() {
     return (
         <main className="booking-page">
             <div className="container">
+                {/* Top bar with Current Salon Indicator */}
+                {salon && (
+                    <div className="booking-top-bar">
+                        <Link
+                            to={`/salon/${salon.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="current-salon-indicator"
+                            title={`Click to view details for ${salon.name}`}
+                        >
+                            <div className="salon-indicator-img">
+                                {salon.image ? (
+                                    <img src={salon.image} alt={salon.name} />
+                                ) : (
+                                    <Store size={18} className="salon-indicator-fallback-icon" />
+                                )}
+                            </div>
+                            <div className="salon-indicator-info">
+                                <span className="salon-indicator-label">Booking at</span>
+                                <span className="salon-indicator-name">{salon.name}</span>
+                            </div>
+                            {salon.rating > 0 && (
+                                <div className="salon-indicator-rating">
+                                    <Star size={11} fill="#ffb800" color="#ffb800" />
+                                    <span>{salon.rating.toFixed(1)}</span>
+                                </div>
+                            )}
+                            <ExternalLink size={13} className="salon-indicator-link-icon" />
+                        </Link>
+                    </div>
+                )}
+
                 {/* Custom Stepper */}
                 <div className="booking-stepper">
                     {steps.map((s, i) => (

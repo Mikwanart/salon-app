@@ -9,14 +9,13 @@ interface RoleProtectedRouteProps {
 }
 
 export default function RoleProtectedRoute({ children, role }: RoleProtectedRouteProps) {
-    const { isLoggedIn, isLoading, login, roles, isSalonOwner, isAdmin } = useAuth();
+    const { isLoggedIn, isLoading, openRolePicker, roles, isSalonOwner, isAdmin } = useAuth();
 
-    // Redirect to login if not authenticated
     useEffect(() => {
         if (!isLoading && !isLoggedIn) {
-            login();
+            openRolePicker();
         }
-    }, [isLoading, isLoggedIn, login]);
+    }, [isLoading, isLoggedIn, openRolePicker]);
 
     if (isLoading || !isLoggedIn) {
         return (

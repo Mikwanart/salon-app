@@ -13,7 +13,7 @@ export default function SalonDetail() {
     const { id } = useParams<{ id: string }>();
     const [salon, setSalon] = useState<Salon | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const { isLoggedIn, login: authLogin } = useAuth();
+    const { isLoggedIn, openRolePicker } = useAuth();
     const { showToast } = useToast();
     const { getAccessTokenSilently } = useAuth0();
 
@@ -43,7 +43,7 @@ export default function SalonDetail() {
     const handleSubmitReview = async () => {
         if (!isLoggedIn) {
             showToast('Please log in to submit a review.', 'error');
-            authLogin();
+            openRolePicker();
             return;
         }
 

@@ -3,13 +3,13 @@ import type { ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
-    const { isLoggedIn, login, isLoading } = useAuth();
+    const { isLoggedIn, openRolePicker, isLoading } = useAuth();
 
     useEffect(() => {
         if (!isLoading && !isLoggedIn) {
-            login();
+            openRolePicker();
         }
-    }, [isLoading, isLoggedIn, login]);
+    }, [isLoading, isLoggedIn, openRolePicker]);
 
     if (isLoading || !isLoggedIn) {
         return (

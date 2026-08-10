@@ -200,8 +200,19 @@ export default function BookingTimeStep({
                             availableTimeSlots.map(time => {
                                 const isBooked = bookedSlots.includes(time);
                                 const isSelected = selectedTime === time;
-                                
-                                if (isBooked) return null; // or show as disabled
+
+                                if (isBooked) {
+                                    return (
+                                        <button
+                                            key={time}
+                                            className="time-slot-btn booked"
+                                            disabled
+                                        >
+                                            <span>{time}</span>
+                                            <span className="booked-label">Booked</span>
+                                        </button>
+                                    );
+                                }
 
                                 return (
                                     <button 

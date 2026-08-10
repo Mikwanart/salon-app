@@ -144,6 +144,15 @@
     scroll-behavior: smooth;
 }
 
+/* Full-width variant — used when no sidebar is rendered */
+.pd-main--full {
+    width: 100%;
+}
+
+.pd-main--full .pd-content {
+    max-width: 860px;
+}
+
 .pd-header {
     position: sticky;
     top: 0;
@@ -588,4 +597,88 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+/* --- Role Shortcut Grid (Admin / Salon Owner) --- */
+.pd-shortcut-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .pd-shortcut-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pd-shortcut-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 18px;
+    background-color: #ffffff;
+    border-radius: 14px;
+    border: 1px solid rgba(123, 32, 64, 0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.pd-shortcut-card:hover {
+    background-color: #fdf5f7;
+    border-color: rgba(123, 32, 64, 0.18);
+    transform: translateY(-2px);
+}
+
+.pd-shortcut-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(123, 32, 64, 0.08);
+    color: #7B2040;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pd-shortcut-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.pd-shortcut-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1f0d14;
+}
+
+.pd-shortcut-desc {
+    font-size: 0.78rem;
+    color: rgba(123, 32, 64, 0.55);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pd-shortcut-arrow {
+    color: rgba(123, 32, 64, 0.35);
+    flex-shrink: 0;
+    transition: color 0.18s, transform 0.18s;
+}
+
+.pd-shortcut-card:hover .pd-shortcut-arrow {
+    color: #7B2040;
+    transform: translateX(3px);
+}
+
+/* Inline sign-out row (admin / salon owner — no sidebar) */
+.pd-inline-signout {
+    padding-top: 16px;
+    border-top: 1px solid rgba(233, 30, 140, 0.08);
 }

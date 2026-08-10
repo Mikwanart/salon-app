@@ -26,6 +26,124 @@
   margin-bottom: 2rem;
 }
 
+/* Booking Top Bar & Current Salon Indicator */
+.booking-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 1.25rem 0 0.5rem;
+}
+
+.current-salon-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem 0.85rem 0.35rem 0.35rem;
+  background: #fff;
+  border: 1px solid var(--border, rgba(0,0,0,0.12));
+  border-radius: 9999px;
+  text-decoration: none;
+  color: var(--on-surface, #1a1a2e);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.current-salon-indicator:hover {
+  border-color: var(--primary);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(177, 14, 107, 0.15);
+}
+
+.salon-indicator-img {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(177, 14, 107, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.salon-indicator-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.salon-indicator-fallback-icon {
+  color: var(--primary);
+}
+
+.salon-indicator-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.salon-indicator-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--on-surface-variant, #888);
+}
+
+.salon-indicator-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--on-surface, #1a1a2e);
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.salon-indicator-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--on-surface, #1a1a2e);
+  background: rgba(255, 184, 0, 0.14);
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+}
+
+.salon-indicator-link-icon {
+  color: var(--on-surface-variant, #999);
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.current-salon-indicator:hover .salon-indicator-link-icon {
+  color: var(--primary);
+}
+
+[data-theme="dark"] .current-salon-indicator {
+  background: #1a1830;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .salon-indicator-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .salon-indicator-name {
+  color: #f0f0f8;
+}
+
+@media (max-width: 640px) {
+  .booking-top-bar {
+    padding-top: 0.75rem;
+  }
+  .salon-indicator-name {
+    max-width: 130px;
+  }
+}
+
 /* Stepper Component */
 .booking-stepper {
   display: flex;
@@ -727,6 +845,26 @@
   background-color: rgba(177, 14, 107, 0.1);
   color: var(--primary);
   font-weight: 700;
+}
+
+.time-slot-btn.booked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: var(--on-surface-variant, #888);
+  background-color: rgba(128, 128, 128, 0.08);
+  border-color: rgba(128, 128, 128, 0.25);
+  pointer-events: none;
+}
+
+.booked-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant, #999);
+  background-color: rgba(128, 128, 128, 0.15);
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
 }
 
 .slot-icon {

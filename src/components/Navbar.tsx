@@ -16,7 +16,7 @@ export default function Navbar() {
     const [bellOpen, setBellOpen] = useState(false);
     const bellRef = useRef<HTMLDivElement>(null);
 
-    const { user, isLoggedIn, login, isSalonOwner, isAdmin } = useAuth();
+    const { user, isLoggedIn, openRolePicker, isSalonOwner, isAdmin } = useAuth();
     const { getAccessTokenSilently } = useAuth0();
     const { showToast } = useToast();
     const { isDark, toggle } = useTheme();
@@ -218,10 +218,10 @@ export default function Navbar() {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className="btn btn-outline nav-login" onClick={() => login()}>
+                            <button className="btn btn-outline nav-login" onClick={() => openRolePicker()}>
                                 Registered User
                             </button>
-                            <button className="btn btn-primary nav-login" style={{ border: '2px solid transparent' }} onClick={() => login({ authorizationParams: { screen_hint: 'signup' } })}>
+                            <button className="btn btn-primary nav-login" style={{ border: '2px solid transparent' }} onClick={() => openRolePicker()}>
                                 New User
                             </button>
                         </div>
@@ -259,11 +259,11 @@ export default function Navbar() {
                         <div className="fresha-card">
                             {!isLoggedIn ? (
                                 <>
-                                    <button className="fresha-row" style={{ color: 'var(--primary)', border: '2px solid var(--primary)', borderRadius: '8px', marginBottom: '8px' }} onClick={() => { setMenuOpen(false); login(); }}>
+                                    <button className="fresha-row" style={{ color: 'var(--primary)', border: '2px solid var(--primary)', borderRadius: '8px', marginBottom: '8px' }} onClick={() => { setMenuOpen(false); openRolePicker(); }}>
                                         <span>Registered User</span>
                                         <ChevronRight size={20} className="fresha-chevron" />
                                     </button>
-                                    <button className="fresha-row primary-text" style={{ border: '2px solid transparent', borderRadius: '8px' }} onClick={() => { setMenuOpen(false); login({ authorizationParams: { screen_hint: 'signup' } }); }}>
+                                    <button className="fresha-row primary-text" style={{ border: '2px solid transparent', borderRadius: '8px' }} onClick={() => { setMenuOpen(false); openRolePicker(); }}>
                                         <span>New User</span>
                                         <ChevronRight size={20} className="fresha-chevron" />
                                     </button>
