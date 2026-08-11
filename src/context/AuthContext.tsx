@@ -17,8 +17,10 @@ interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
     login: (options?: any) => void;
-    /** Opens the role-picker modal before redirecting to Auth0 */
+    /** Opens the role-picker modal (login mode) before redirecting to Auth0 */
     openRolePicker: () => void;
+    /** Opens the role-picker modal in sign-up mode before redirecting to Auth0 */
+    openSignupPicker: () => void;
     logout: () => void;
     isLoading: boolean;
     roles: string[];
@@ -46,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isSyncing, setIsSyncing] = useState(true);
     const [isEmailVerified, setIsEmailVerified] = useState(true);
     const [rolePickerOpen, setRolePickerOpen] = useState(false);
+    const [rolePickerMode, setRolePickerMode] = useState<LoginMode>('login');
 
     useEffect(() => {
         const syncUser = async () => {
@@ -53,9 +56,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const emailVerified = auth0User.email_verified !== false;
                 setIsEmailVerified(emailVerified);
 
+                // Auth0 sets name = email for email/password accounts.
+                // Prefer given_name + family_name, then name if it differs from email,
+                // otherwise derive a friendly name from the email local-part.
+                const email = auth0User.email || '';
+                let displayName: string;
+                if (auth0User.given_name || auth0User.family_name) {
+                    displayName = [auth0User.given_name, auth0User.family_name].filter(Boolean).join(' ');
+                } else if (auth0User.name && auth0User.name !== email) {
+                    displayName = auth0User.name;
+                } else {
+                    // Derive from email local-part: "john.doe_123" → "John Doe"
+                    const localPart = email.split('@')[0] || 'User';
+                    displayName = localPart
+                        .replace(/[._\-]+/g, ' ')
+                        .replace(/\d+$/, '')
+                        .trim()
+                        .split(' ')
+                        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                        .join(' ') || 'User';
+                }
+
                 const newUser = {
-                    name: auth0User.name || auth0User.email || 'User',
-                    email: auth0User.email || '',
+                    name: displayName,
+                    email,
                     avatar: auth0User.picture,
                 };
                 setUser(newUser);
@@ -104,6 +128,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const openRolePicker = () => {
+        setRolePickerMode('login');
+        setRolePickerOpen(true);
+    };
+
+    const openSignupPicker = () => {
+        setRolePickerMode('signup');
         setRolePickerOpen(true);
     };
 
@@ -123,10 +153,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoggedIn: isAuthenticated, login, openRolePicker, logout, isLoading: isLoading || isSyncing, roles, isSalonOwner, isAdmin, isEmailVerified }}>
+        <AuthContext.Provider value={{ user, isLoggedIn: isAuthenticated, login, openRolePicker, openSignupPicker, logout, isLoading: isLoading || isSyncing, roles, isSalonOwner, isAdmin, isEmailVerified }}>
             {children}
             <RolePickerModal
                 isOpen={rolePickerOpen}
+                mode={rolePickerMode}
                 onClose={() => setRolePickerOpen(false)}
                 onConfirm={handleRoleConfirm}
             />

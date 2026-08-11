@@ -11,6 +11,23 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
 
     const { email, name } = req.body;
 
+    // Auth0 sets name = email for email/password accounts.
+    // Derive a friendly display name when that happens.
+    const deriveFriendlyName = (rawName: string | undefined, rawEmail: string | undefined): string => {
+      if (rawName && rawEmail && rawName !== rawEmail) return rawName;
+      const localPart = (rawEmail || '').split('@')[0] || '';
+      if (!localPart) return rawName || 'User';
+      return localPart
+        .replace(/[._\-]+/g, ' ')
+        .replace(/\d+$/, '')
+        .trim()
+        .split(' ')
+        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ') || rawName || 'User';
+    };
+
+    const friendlyName = deriveFriendlyName(name, email);
+
     // Check if user exists by auth0Id
     let user = await prisma.user.findUnique({
       where: { auth0Id },
@@ -31,7 +48,7 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
     // If still not found, create them
     if (!user) {
       const safeEmail = email || `${auth0Id}@placeholder.salonbook.com`;
-      const safeName = name || 'User';
+      const safeName = friendlyName;
       const initialRole = safeEmail.toLowerCase() === 'mikwanart7@gmail.com' ? 'ADMIN' : 'CLIENT';
       
       console.log('Creating new user:', safeEmail, safeName, 'Role:', initialRole);

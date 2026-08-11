@@ -22,6 +22,7 @@ export default function BookingPaymentStep({
     onBack
 }: BookingPaymentStepProps) {
     const [paymentMethod, setPaymentMethod] = useState<'momo' | 'card' | 'cash' | ''>('');
+    const [momoPhone, setMomoPhone] = useState('');
     
     const servicePrice = serviceDetails?.price || 0;
     const bookingFee = 5.00;
@@ -30,11 +31,17 @@ export default function BookingPaymentStep({
 
     const handleProceed = () => {
         if (!paymentMethod) return;
-        
-        // In a real app, we'd collect phone number or card details here
-        // For the UI mockup integration, we just pass the method
-        const details = paymentMethod === 'momo' ? { phone: '0555555555' } : {};
-        onPay(paymentMethod, details);
+
+        if (paymentMethod === 'momo') {
+            const cleanedPhone = momoPhone.replace(/\s+/g, '');
+            if (!/^0[0-9]{9}$/.test(cleanedPhone)) {
+                alert('Please enter a valid 10-digit Ghana MoMo number (e.g. 0241234567)');
+                return;
+            }
+            onPay('momo', { phone: cleanedPhone });
+        } else {
+            onPay(paymentMethod, {});
+        }
     };
 
     return (
@@ -79,6 +86,35 @@ export default function BookingPaymentStep({
                                     <p className="payment-desc">Pay directly with your mobile wallet</p>
                                 </div>
                             </div>
+                            {paymentMethod === 'momo' && (
+                                <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
+                                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                                        MoMo Phone Number
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        placeholder="e.g. 0241234567"
+                                        value={momoPhone}
+                                        onChange={e => setMomoPhone(e.target.value)}
+                                        maxLength={10}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 14px',
+                                            borderRadius: '8px',
+                                            border: '1.5px solid var(--primary)',
+                                            background: 'var(--bg)',
+                                            color: 'var(--text)',
+                                            fontSize: '1rem',
+                                            outline: 'none',
+                                            boxSizing: 'border-box',
+                                        }}
+                                        autoFocus
+                                    />
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '5px' }}>
+                                        Enter the number registered with MTN MoMo
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Pay with Cash */}

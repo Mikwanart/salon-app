@@ -164,7 +164,9 @@ export default function Booking() {
             const result = await createAppointment(bookingData, token);
 
             if (result.paystackAuthorizationUrl) {
-                window.open(result.paystackAuthorizationUrl, '_blank', 'noopener,noreferrer');
+                // Redirect in the same tab — window.open after an await is blocked by most browsers
+                window.location.href = result.paystackAuthorizationUrl;
+                return; // stop further state updates since we're navigating away
             }
 
             setPaymentSimulationStep('momo-prompt');

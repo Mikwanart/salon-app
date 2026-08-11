@@ -6,6 +6,7 @@ export type LoginMode = 'login' | 'signup';
 
 interface RolePickerModalProps {
     isOpen: boolean;
+    mode?: LoginMode;
     onClose: () => void;
     onConfirm: (role: string, mode: LoginMode) => void;
 }
@@ -28,7 +29,7 @@ const ROLES = [
     },
 ];
 
-export default function RolePickerModal({ isOpen, onClose, onConfirm }: RolePickerModalProps) {
+export default function RolePickerModal({ isOpen, mode = 'login', onClose, onConfirm }: RolePickerModalProps) {
     const [selected, setSelected] = useState<string | null>(null);
 
     if (!isOpen) return null;
@@ -43,7 +44,7 @@ export default function RolePickerModal({ isOpen, onClose, onConfirm }: RolePick
                 <button className="rp-close" onClick={onClose} aria-label="Close">✕</button>
 
                 <div className="rp-header">
-                    <h2>Sign in as a</h2>
+                    <h2>{mode === 'signup' ? 'Sign up as a' : 'Sign in as a'}</h2>
                 </div>
 
                 <div className="rp-roles">
@@ -76,9 +77,9 @@ export default function RolePickerModal({ isOpen, onClose, onConfirm }: RolePick
                     <button
                         className="rp-continue-btn"
                         disabled={!selected}
-                        onClick={() => selected && onConfirm(selected, 'login')}
+                        onClick={() => selected && onConfirm(selected, mode)}
                     >
-                        Sign In as {selected ? ROLES.find(r => r.id === selected)?.label : '…'}
+                        {mode === 'signup' ? 'Sign Up' : 'Sign In'} as {selected ? ROLES.find(r => r.id === selected)?.label : '…'}
                     </button>
                 </div>
             </div>

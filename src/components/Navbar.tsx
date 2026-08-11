@@ -16,7 +16,7 @@ export default function Navbar() {
     const [bellOpen, setBellOpen] = useState(false);
     const bellRef = useRef<HTMLDivElement>(null);
 
-    const { user, isLoggedIn, openRolePicker, isSalonOwner, isAdmin } = useAuth();
+    const { user, isLoggedIn, openRolePicker, openSignupPicker, isSalonOwner, isAdmin } = useAuth();
     const { getAccessTokenSilently } = useAuth0();
     const { showToast } = useToast();
     const { isDark, toggle } = useTheme();
@@ -221,7 +221,7 @@ export default function Navbar() {
                             <button className="btn btn-outline nav-login" onClick={() => openRolePicker()}>
                                 Registered User
                             </button>
-                            <button className="btn btn-primary nav-login" style={{ border: '2px solid transparent' }} onClick={() => openRolePicker()}>
+                            <button className="btn btn-primary nav-login" style={{ border: '2px solid transparent' }} onClick={() => openSignupPicker()}>
                                 New User
                             </button>
                         </div>
@@ -263,7 +263,7 @@ export default function Navbar() {
                                         <span>Registered User</span>
                                         <ChevronRight size={20} className="fresha-chevron" />
                                     </button>
-                                    <button className="fresha-row primary-text" style={{ border: '2px solid transparent', borderRadius: '8px' }} onClick={() => { setMenuOpen(false); openRolePicker(); }}>
+                                    <button className="fresha-row primary-text" style={{ border: '2px solid transparent', borderRadius: '8px' }} onClick={() => { setMenuOpen(false); openSignupPicker(); }}>
                                         <span>New User</span>
                                         <ChevronRight size={20} className="fresha-chevron" />
                                     </button>

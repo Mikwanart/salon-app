@@ -188,11 +188,15 @@ export const createAppointment = async (req: Request, res: Response): Promise<vo
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
       try {
+        const bookingFee = 5.00;
+        const vat = service.price * 0.1;
+        const totalAmountCedis = service.price + bookingFee + vat;
+
         const init = await paystackService.initializeTransaction({
           email: user.email,
-          amountCedis: service.price,
+          amountCedis: totalAmountCedis,
           reference: paystackReference,
-          callbackUrl: `${frontendUrl}/dashboard`,
+          callbackUrl: `${frontendUrl}/booking?paystack_ref=${paystackReference}`,
           metadata: { salonId: targetSalonId, serviceId: targetServiceId, userId: user.id },
         });
         paystackAuthorizationUrl = init.authorizationUrl;
