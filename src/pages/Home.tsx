@@ -104,6 +104,22 @@ export default function Home() {
             <section className="hero">
                 <div className="hero-overlay" />
                 <div className="hero-content container">
+                    <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 14px',
+                        marginBottom: '16px',
+                        borderRadius: '999px',
+                        background: 'rgba(177, 14, 107, 0.15)',
+                        border: '1px solid rgba(177, 14, 107, 0.4)',
+                        color: '#f472b6',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        letterSpacing: '0.03em'
+                    }}>
+                        ✨ Test Mode Active • Premium Booking Experience
+                    </div>
                     <h1>
                         <span style={{ color: '#b10e6b' }}>Book</span> your style in seconds.
                     </h1>
